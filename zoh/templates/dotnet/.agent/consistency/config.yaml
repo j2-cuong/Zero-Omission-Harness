@@ -1,0 +1,53 @@
+# ===========================================================
+# CONSISTENCY VALIDATOR CONFIGURATION
+# ===========================================================
+
+thresholds:
+  contract_code_match: 100    # Không chấp nhận sai lệch
+  map_file_sync: 95           # Cảnh báo nếu > 5% lệch
+  doc_accuracy: 90            # Warning nếu < 90% coverage
+  state_consistency: 100      # State phải chính xác 100%
+
+auto_fix:
+  enabled: true
+  max_drift_percent: 5
+  allowed_fixes:
+    - map_update
+    - doc_sync
+    - hash_cache_refresh
+
+blocking:
+  on_critical: true
+  on_error: true
+  on_warning: false
+
+paths:
+  code:
+    - .cpp
+    - .hpp
+    - .cs
+    - .py
+    - .js
+    - .ts
+    - .go
+    - .java
+    - .rs
+  map:
+    - .map/
+    - ARCHITECTURE.md
+  doc:
+    - .doc/
+    - README.md
+    - docs/
+  contract:
+    - .agent/contracts/
+  state:
+    - .state/STATE.md
+    - .state/STATE_RULES.yaml
+
+notifications:
+  on_fail: true
+  on_drift_detected: true
+  channels:
+    - console
+    - file_report

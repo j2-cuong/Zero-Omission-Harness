@@ -22,59 +22,92 @@
 
 ---
 
-## Quick Start (Light Mode)
+## 📦 Installation & Setup
 
-### 1. Clone & Install (2 minutes)
+Before running ZOH commands, you need to install the package in your environment:
 
 ```bash
-git clone <repo-url>
+# 1. Clone the repository
+git clone https://github.com/your-repo/Zero-Omission-Harness.git
 cd Zero-Omission-Harness
+
+# 2. Install in editable mode to enable the 'zoh' command
 pip install -e ".[cli]"
+
+# 3. Verify installation
+zoh --help
 ```
 
-### 2. Initialize (1 minute)
-
-```bash
-# Initialize from preset (react, dotnet, default)
-zoh init --preset react --mode light
-
-# View current status
-zoh status
-```
-
-### 3. Verification & Simulation
-
-```bash
-# Run consistency check
-zoh validate
-
-# Simulate impact of changes (Impact Analysis)
-zoh sim src/utils.ts
-```
-
-### 3. Start Interview (5 minutes)
-
-```bash
-# Switch to interview phase
-zoh transition interview
-
-# After interview, switch to planning
-zoh transition planning
-```
-
-Done! See [ONBOARDING.md](ONBOARDING.md) for more details.
+> [!NOTE]
+> If the `zoh` command is not recognized after installation, you can always use the direct module syntax: `python -m zoh.cli <command>`.
 
 ---
 
-## Key Features
+## 🚀 Quick Start
 
-| Feature | Description |
-|---------|-------------|
-| **State Machine** | Clear phases with allowed transitions and guards |
-| **Validation Gates** | Automated checks before each phase transition |
-| **Consistency Check** | Code ↔ Map ↔ Doc always in sync |
-| **Auto-fix** | Automatic fix for small issues (with approval) |
-| **Checkpoint** | Backup before major changes |
+### 🚀 1. Initialize a New Project
+
+The `init` command scaffolds a complete "Zero-Omission" infrastructure and initializes the AI Agent behavior rules.
+
+```bash
+# Basic initialization (Full Mode)
+zoh init my-awesome-project
+
+# Initialize with a specific preset and mode
+zoh init my-awesome-project --preset react --mode strict
+
+# Lightweight initialization (Only Rules & Config)
+zoh init my-minimal-project --mode light
+```
+
+#### Initialization Options:
+-   `path`: The destination directory (required).
+-   `--preset`: Architecture ruleset (`default`, `react`, `dotnet`).
+-   `--mode`: Project depth:
+    -   `full` (default): All 12 infrastructure folders.
+    -   `light`: Minimalist (Only `.agent/` and `CONFIG.YAML`).
+    -   `strict`: Full structure with hardened safety rules.
+
+---
+
+### 📂 "Zero-Omission" Project Structure
+
+Every ZOH project is built upon a standard infrastructure designed for absolute traceability:
+
+#### 🧠 Governance & Intelligence
+-   📁 **`.agent/`**: The "Brain" of the project. Master governance rules (`00_MASTER.md`) and requirements (`02_TASK_LIST.md`).
+-   📁 **`.skill/`**: Domain-specific intelligence for AI Agents (React, C#, C++, etc.).
+-   📁 **`.workflow/`**: Standard Operating Procedures (SOPs) for every phase (Interview, Planning, Coding).
+
+#### 🛡️ Stability & Safety
+-   📁 **`.state/`**: Automated State Machine (`STATE_MACHINE.yaml`) and current phase tracking (`STATE.md`).
+-   📁 **`.token/`**: Automated budget management and token usage tracking across all phases.
+-   📁 **`.sim/`**: Impact analysis reports and dependency risk simulations.
+
+#### 🏗️ Architecture & Documentation
+-   📁 **`.map/`**: System architecture maps and visualized dependency graphs.
+-   📁 **`.doc/`**: Comprehensive project documentation and domain-specific knowledge.
+-   📁 **`.router/`**: Configuration for specialized AI routing.
+
+#### 🧪 Quality Assurance
+-   📁 **`.gates/`**: Automated quality checkpoints and validation gates.
+-   📁 **`.bug/`**: Centralized bug logging and historical resolution database.
+-   📁 **`.test/`**: High-level test scenarios and validation cases.
+
+---
+
+### 🛠️ Core Automation Commands
+
+After initializing, use these commands to manage your AI workforce:
+
+| Command | Action | purpose |
+| :--- | :--- | :--- |
+| `zoh status` | Dashboard | View current phase, tasks, and budget. |
+| `zoh validate` | Consistency | Check for drifts between code, maps, and docs. |
+| `zoh transition` | Phase Change | Move to the next project phase with automated guards. |
+| `zoh sim` | Simulation | Analyze the impact of a code change before applying. |
+| `zoh task` | To-Do | List or update project tasks. |
+| `zoh checkpoint` | Safety | Create recovery points before dangerous operations. |
 | **Lock** | Prevent conflicts when multiple AIs work together |
 | **Token Budget** | Cost management per phase |
 
@@ -96,8 +129,8 @@ pip install -e .
 
 ```bash
 # Infrastructure & Initialization
-zoh init --preset <p>      # Initialize from preset (default, react, dotnet)
-zoh init --mode light      # Light mode (only .agent/ and CONFIG.yaml)
+zoh init [path] --preset <p> # Initialize in [path] from preset
+zoh init my_project --mode light # Example: init in 'my_project' folder
 
 # Validation & Simulation
 zoh validate                # Run consistency validation

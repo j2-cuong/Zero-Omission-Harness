@@ -1,0 +1,4 @@
+# .test/scenarios/
+# Chứa test scenario từ .sim/ được chạy thực tế
+# Naming: sim_{fix_id}.{ext}
+# Mỗi file: Input → Expected → Actual → PASS/FAIL

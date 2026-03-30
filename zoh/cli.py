@@ -168,13 +168,17 @@ if HAS_TYPER:
     
     @app.command()
     def init(
+        path: Optional[str] = Argument(None, help="Destination directory (optional)"),
         preset: str = Option("default", "--preset", "-p", help="Preset: default, react, dotnet"),
         mode: str = Option("full", "--mode", "-m", help="Mode: full (all folders), light (only agent/config)"),
         force: bool = Option(False, "--force", help="Overwrite existing files")
     ):
         """Initialize ZOH structure from preset"""
         import shutil
-        console.print(Panel.fit(f"🏗️ INITIALIZE ZOH: {preset.upper()} (MODE: {mode.upper()})", style="bold green"))
+        target_path = Path(path) if path else Path(".")
+        console.print(Panel.fit(f"🏗️ INITIALIZE ZOH: {preset.upper()} (MODE: {mode.upper()})", 
+                                subtitle=f"Target: {target_path.absolute()}",
+                                style="bold green"))
         
         template_dir = Path(__file__).parent / "templates" / preset
         if not template_dir.exists():
@@ -183,21 +187,26 @@ if HAS_TYPER:
             raise typer.Exit(code=1)
         
         # Check if already initialized
-        if Path("CONFIG.yaml").exists() and not force:
-            console.print("[yellow]⚠️  Already initialized. Use --force to overwrite.[/yellow]")
+        config_file = target_path / "CONFIG.yaml"
+        if config_file.exists() and not force:
+            console.print(f"[yellow]⚠️  Already initialized in {target_path}. Use --force to overwrite.[/yellow]")
             raise typer.Exit(code=1)
+            
+        # Create target path if it doesn't exist
+        if not target_path.exists():
+            target_path.mkdir(parents=True)
             
         # Define folders allowed for light mode
         light_allowed = ['.agent', 'CONFIG.YAML', 'CONFIG.yaml']
+        is_light = mode.lower() == "light"
             
         # Copy files
         try:
-            # Copy contents of template_dir to current directory
             for item in template_dir.iterdir():
-                if mode == "light" and item.name not in light_allowed:
+                if is_light and item.name not in light_allowed:
                     continue
                     
-                dest = Path(".") / item.name
+                dest = target_path / item.name
                 if item.is_dir():
                     if dest.exists() and force:
                         shutil.rmtree(dest)
@@ -206,7 +215,7 @@ if HAS_TYPER:
                     shutil.copy2(item, dest)
             
             console.print(f"   [green]✅ Initialized from {preset} preset in {mode} mode[/green]")
-            console.print("\nRun [bold]zoh status[/bold] to verify.")
+            console.print(f"\nNext steps:\n   cd {target_path}\n   zoh status")
             
         except Exception as e:
             console.print(f"[red]❌ Error: {e}[/red]")

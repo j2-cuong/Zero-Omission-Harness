@@ -1,0 +1,67 @@
+# ===========================================================
+# DRIFT THRESHOLDS - Ngưỡng chấp nhận được cho drift
+# ===========================================================
+
+thresholds:
+  # Contract ↔ Code: Không chấp nhận sai lệch
+  contract_code_mismatch: 0%
+  contract_endpoint_missing: 0%
+  contract_type_mismatch: 0%
+  
+  # Map ↔ Code: Cảnh báo nếu > 5%
+  map_file_missing: 5%
+  map_file_orphaned: 5%
+  map_outdated: 10%
+  map_hash_mismatch: 0%
+  
+  # Doc ↔ Reality: Warning nếu > 10%
+  doc_outdated_markers: 10%
+  doc_feature_coverage: 90%
+  doc_api_accuracy: 100%
+  
+  # State: Phải chính xác 100%
+  state_invalid_transitions: 0%
+  state_missing_required_files: 0%
+  state_phase_mismatch: 0%
+
+# Actions dựa trên threshold
+actions:
+  # Vượt ngưỡng critical
+  exceed_critical:
+    action: block_pipeline
+    notify: [console, file_report, state_update]
+    create_ticket: true
+    
+  # Vượt ngưỡng warning
+  exceed_warning:
+    action: allow_with_warning
+    notify: [console, file_report]
+    auto_fix: true
+    
+  # Có thể auto-fix
+  auto_fixable:
+    max_drift_percent: 5
+    allowed_fixes:
+      - map_update
+      - doc_sync
+      - hash_cache_refresh
+      - progress_update
+    
+  # Cần manual intervention
+  manual_required:
+    create_ticket: true
+    assign_to: project_lead
+    priority: high
+
+# Scoring weights
+scoring_weights:
+  contract_code_match: 40
+  map_file_sync: 25
+  doc_accuracy: 20
+  state_consistency: 15
+
+# Exit criteria
+exit_criteria:
+  min_overall_score: 80
+  max_critical_failures: 0
+  max_error_failures: 2

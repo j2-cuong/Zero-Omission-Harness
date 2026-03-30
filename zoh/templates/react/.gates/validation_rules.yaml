@@ -1,0 +1,191 @@
+# ===========================================================
+# VALIDATION GATES RULES v2.0
+# Auto-validation với retry mechanism và exit criteria
+# ===========================================================
+
+gates:
+  version: "2.0.0"
+  
+  # Gate 1: Rule Validation
+  rule_validation:
+    enabled: true
+    order: 1
+    
+    tools:
+      primary: "linter"
+      secondary: "skill_file_checker"
+      validator_script: ".gates/validators/rule_validator.py"
+      
+    pass_criteria:
+      max_errors: 0
+      max_warnings: 0
+      required_checks:
+        - syntax_valid
+        - style_compliant
+        - no_forbidden_patterns
+        
+    retry:
+      max_attempts: 3
+      backoff: linear
+      auto_fix_between_retries: true
+      
+    on_fail:
+      action: auto_fix_then_retry
+      notify: [console, state_update]
+      
+    on_retry_exhausted:
+      action: halt_and_notify_human
+      create_blocker: true
+
+  # Gate 2: Contract Validation
+  contract_validation:
+    enabled: true
+    order: 2
+    
+    tools:
+      primary: "contract_validator"
+      validator_script: ".agent/consistency/validator.py"
+      check_type: "contract"
+      
+    pass_criteria:
+      endpoint_match_percent: 100
+      type_match_percent: 100
+      no_undefined_endpoints: true
+      
+    retry:
+      max_attempts: 2
+      backoff: fixed
+      auto_fix_between_retries: false  # Không auto-fix contracts
+      
+    on_fail:
+      action: halt_and_notify_human
+      notify: [console, email, state_update]
+      
+    on_retry_exhausted:
+      action: create_escalation_ticket
+      assign_to: tech_lead
+
+  # Gate 3: Map Consistency
+  map_validation:
+    enabled: true
+    order: 3
+    
+    tools:
+      primary: "map_sync_checker"
+      validator_script: ".agent/consistency/validator.py"
+      check_type: "map"
+      
+    pass_criteria:
+      sync_percent: 95
+      no_orphaned_files: true
+      hash_consistency: true
+      
+    retry:
+      max_attempts: 1
+      backoff: none
+      auto_fix_between_retries: true
+      
+    on_fail:
+      action: auto_update_map
+      notify: [console, file_report]
+      
+    on_retry_exhausted:
+      action: require_manual_review
+
+  # Gate 4: State Consistency
+  state_validation:
+    enabled: true
+    order: 4
+    
+    tools:
+      primary: "state_validator"
+      validator_script: ".state/state_validator.py"
+      
+    pass_criteria:
+      phase_valid: true
+      transitions_valid: true
+      required_files_exist: true
+      
+    retry:
+      max_attempts: 1
+      auto_fix: false
+      
+    on_fail:
+      action: halt_immediately
+      notify: [console, state_update, user_alert]
+
+  # Gate 5: Test Validation (GATE-3)
+  test_validation:
+    enabled: true
+    order: 5
+    blocking: true
+    
+    tools:
+      primary: "test_runner"
+      validator_script: ".gates/validators/test_runner.py"
+      
+    pass_criteria:
+      all_tests_pass: true
+      min_coverage_percent: 80
+      no_memory_leaks: true
+      no_race_conditions: true
+      
+    retry:
+      max_attempts: 3
+      backoff: exponential
+      auto_fix_between_retries: true
+      
+    on_fail:
+      action: debug_and_retry
+      notify: [console, state_update, test_report]
+      
+    on_retry_exhausted:
+      action: create_bug_ticket
+      status: blocked
+
+# Exit criteria
+criteria:
+  success:
+    all_gates_pass: true
+    no_critical_failures: true
+    overall_score: ">= 90"
+    
+  partial_success:
+    critical_gates_pass: true
+    warnings_allowed: true
+    overall_score: ">= 80"
+    
+  failure:
+    any_critical_gate_fail: true
+    score_below: 80
+    max_retries_exhausted: true
+
+# Escalation path
+escalation:
+  level_1:
+    condition: "fail_after_1_retry"
+    action: "auto_fix_and_retry"
+    notify: []
+    
+  level_2:
+    condition: "fail_after_max_retries"
+    action: "create_blocker_ticket"
+    notify: [developer]
+    
+  level_3:
+    condition: "critical_gate_fail"
+    action: "halt_pipeline_and_escalate"
+    notify: [tech_lead, project_manager]
+    
+  level_4:
+    condition: "multiple_gates_fail"
+    action: "rollback_to_checkpoint"
+    notify: [team]
+
+# Execution mode
+execution:
+  mode: auto  # auto | manual | hybrid
+  parallel: false  # Run gates sequentially
+  stop_on_first_fail: true
+  generate_report: true
+  report_location: ".gates/reports/validation_report_{timestamp}.md"

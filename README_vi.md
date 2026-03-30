@@ -22,59 +22,92 @@
 
 ---
 
-## Quick Start (Light Mode)
+## 📦 Cài đặt & Thiết lập
 
-### 1. Clone & Install (2 phút)
+Trước khi chạy các lệnh ZOH, bạn cần cài đặt gói vào môi trường của mình:
 
 ```bash
-git clone <repo-url>
+# 1. Clone repository
+git clone https://github.com/your-repo/Zero-Omission-Harness.git
 cd Zero-Omission-Harness
+
+# 2. Cài đặt ở chế độ editable để kích hoạt lệnh 'zoh'
 pip install -e ".[cli]"
+
+# 3. Kiểm tra cài đặt
+zoh --help
 ```
 
-### 2. Khởi tạo (1 phút)
-
-```bash
-# Khởi tạo từ preset (react, dotnet, default)
-zoh init --preset react --mode light
-
-# Xem trạng thái hiện tại
-zoh status
-```
-
-### 3. Kiểm tra & Mô phỏng
-
-```bash
-# Chạy kiểm tra tính nhất quán
-zoh validate
-
-# Mô phỏng ảnh hưởng của thay đổi (Impact Analysis)
-zoh sim src/utils.ts
-```
-
-### 3. Bắt đầu Interview (5 phút)
-
-```bash
-# Chuyển sang phase interview
-zoh transition interview
-
-# Sau khi interview xong, chuyển sang planning
-zoh transition planning
-```
-
-Hoàn tất! Xem [ONBOARDING.md](ONBOARDING.md) để biết thêm chi tiết.
+> [!NOTE]
+> Nếu lệnh `zoh` không được nhận diện sau khi cài đặt, bạn luôn có thể sử dụng cú pháp module trực tiếp: `python -m zoh.cli <lệnh>`.
 
 ---
 
-## Key Features
+## 🚀 Khởi động nhanh
 
-| Feature | Mô tả |
-|---------|-------|
-| **State Machine** | Các phase rõ ràng với allowed transitions và guards |
-| **Validation Gates** | Kiểm tra tự động trước mỗi chuyển phase |
-| **Consistency Check** | Code ↔ Map ↔ Doc luôn đồng bộ |
-| **Auto-fix** | Sửa lỗi nhỏ tự động (có approval) |
-| **Checkpoint** | Backup trước mỗi thay đổi lớn |
+### 🚀 1. Khởi tạo dự án (Initialize)
+
+Lệnh `init` sẽ tự động sinh ra toàn bộ hạ tầng "Zero-Omission" và thiết lập các quy tắc ứng xử cho AI Agent.
+
+```bash
+# Khởi tạo mặc định (Full Mode)
+zoh init my-awesome-project
+
+# Khởi tạo với preset và mode cụ thể
+zoh init my-awesome-project --preset react --mode strict
+
+# Khởi tạo tối giản (Chỉ lấy Rule & Config)
+zoh init my-minimal-project --mode light
+```
+
+#### Các tùy chọn khởi tạo:
+-   `path`: Đường dẫn thư mục đích (Bắt buộc).
+-   `--preset`: Tập quy tắc kiến trúc (`default`, `react`, `dotnet`).
+-   `--mode`: Độ sâu của hạ tầng:
+    -   `full` (Mặc định): Đầy đủ 12 thư mục hạ tầng ZOH.
+    -   `light`: Tối giản (Chỉ `.agent/` và `CONFIG.YAML`).
+    -   `strict`: Bộ khung đầy đủ với các quy tắc an toàn nghiêm ngặt hơn.
+
+---
+
+### 📂 Bản đồ Hạ tầng "Zero-Omission"
+
+Mọi dự án ZOH đều được xây dựng trên một cấu trúc hạ tầng chuẩn nhằm đảm bảo tính minh bạch tuyệt đối:
+
+#### 🧠 Quản trị & Trí tuệ (Governance)
+-   📁 **`.agent/`**: "Bộ não" của dự án. Chứa các quy tắc quản trị Master (`00_MASTER.md`) và danh sách Task (`02_TASK_LIST.md`).
+-   📁 **`.skill/`**: Nơi lưu trữ "Trí tuệ chuyên biệt" cho AI Agent (React, C#, C++, v.v.).
+-   📁 **`.workflow/`**: Các quy trình vận hành chuẩn (SOPs) cho từng giai đoạn (Phỏng vấn, Lập kế hoạch, Cài đặt).
+
+#### 🛡️ Tính Ổn định & An toàn (Safety)
+-   📁 **`.state/`**: Máy trạng thái tự động (`STATE_MACHINE.yaml`) và theo dõi giai đoạn hiện tại (`STATE.md`).
+-   📁 **`.token/`**: Quản lý ngân sách tự động và theo dõi mức độ tiêu thụ AI Token.
+-   📁 **`.sim/`**: Lưu trữ kết quả phân tích ảnh hưởng và mô phỏng rủi ro khi thay đổi code.
+
+#### 🏗️ Kiến trúc & Tài liệu (Architecture)
+-   📁 **`.map/`**: Sơ đồ kiến trúc hạ tầng và các biểu đồ phụ thuộc (Dependency Graph).
+-   📁 **`.doc/`**: Toàn bộ tài liệu kỹ thuật và kiến thức chuyên sâu về dự án.
+-   📁 **`.router/`**: Cấu hình điều phối các Agent chuyên biệt (AI Routing).
+
+#### 🧪 Kiểm soát Chất lượng (Quality)
+-   📁 **`.gates/`**: Các chốt chặn chất lượng tự động và cổng xác thực (Validation Gates).
+-   📁 **`.bug/`**: Nhật ký quản lý lỗi và lịch sử giải quyết bug tập trung.
+-   📁 **`.test/`**: Các kịch bản kiểm thử (Test Scenarios) và trường hợp xác thực.
+
+---
+
+### 🛠️ Các lệnh tự động hóa cốt lõi
+
+Sau khi khởi tạo, hãy sử dụng các lệnh này để điều hành "Đội ngũ AI" của bạn:
+
+| Lệnh | Hành động | Mục đích |
+| :--- | :--- | :--- |
+| `zoh status` | Dashboard | Xem giai đoạn hiện tại, task đang làm và ngân sách. |
+| `zoh validate` | Consistency | Kiểm tra sự sai lệch giữa Code, Sơ đồ và Tài liệu. |
+| `zoh transition` | Phase Change | Chuyển giai đoạn dự án với các chốt chặn tự động. |
+| `zoh sim` | Simulation | Phân tích ảnh hưởng của một file trước khi thực hiện code. |
+| `zoh task` | To-Do | Liệt kê hoặc cập nhật trạng thái công việc. |
+| `zoh checkpoint` | Safety | Tạo điểm phục hồi an toàn trước khi thực hiện thay đổi lớn. |
 | **Lock** | Ngăn xung đột khi nhiều AI cùng làm việc |
 | **Token Budget** | Quản lý chi phí theo phase |
 
@@ -96,8 +129,8 @@ pip install -e .
 
 ```bash
 # Infrastructure & Initialization
-zoh init --preset <p>      # Khởi tạo từ preset (default, react, dotnet)
-zoh init --mode light      # Chế độ Light (chỉ .agent/ và CONFIG.yaml)
+zoh init [path] --preset <p> # Khởi tạo trong [path] từ preset
+zoh init my_project --mode light # Ví dụ: khởi tạo trong thư mục 'my_project'
 
 # Validation & Simulation
 zoh validate                # Chạy kiểm tra tính nhất quán

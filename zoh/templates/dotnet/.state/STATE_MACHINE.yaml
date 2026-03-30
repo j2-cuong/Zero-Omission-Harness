@@ -1,0 +1,13 @@
+﻿states:
+  interview:
+    allowed_transitions: [planning]
+    description: 'Initial project interview'
+    guards: []
+  planning:
+    allowed_transitions: [coding, interview]
+    description: 'Project planning and task listing'
+    guards: []
+  coding:
+    allowed_transitions: [testing, planning]
+    description: 'Code implementation phase'
+    guards: []

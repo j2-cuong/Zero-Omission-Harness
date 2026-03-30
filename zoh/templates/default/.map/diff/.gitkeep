@@ -1,0 +1,3 @@
+# .map/diff/ — Lịch sử thay đổi contract
+# Mỗi file trong này có dạng: v{n}_to_v{n+1}.md
+# Format: breaking_changes[], silent_mismatches[], affected_modules[]

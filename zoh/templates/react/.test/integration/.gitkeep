@@ -1,0 +1,4 @@
+# .test/integration/
+# Chứa integration test cho interface giữa các module
+# Naming: test_integration_{module_a}_to_{module_b}.{ext}
+# Ví dụ: test_integration_cpp_to_csharp_pipe.py

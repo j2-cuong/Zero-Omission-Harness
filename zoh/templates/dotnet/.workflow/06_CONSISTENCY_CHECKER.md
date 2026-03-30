@@ -1,0 +1,331 @@
+# 06_CONSISTENCY_CHECKER.md — Automated Consistency Validation
+> **Vai trò:** Tự động kiểm tra tính nhất quán giữa các file hệ thống.
+> **Trigger:** Trước khi chuyển phase, sau khi code, sau khi fix.
+> **Output:** Consistency report + Fix suggestions.
+> **Rule:** Inconsistency detected → BLOCK transition.
+
+---
+
+## Consistency Checks
+
+### 1. Code vs Map Consistency
+
+```yaml
+check_code_vs_map:
+  description: "Code có khớp với .map/current/ không?"
+  
+  checks:
+    - name: "Component existence"
+      method: "So sánh component_tree.yaml với src/"
+      pass: "Mọi component trong tree đều có file"
+      fail: "Component trong tree nhưng không có file"
+      
+    - name: "Function existence"
+      method: "So sánh data_flow.mmd với implementation"
+      pass: "Mọi function trong flow đều implemented"
+      fail: "Function trong flow nhưng không có implementation"
+      
+    - name: "Dependency accuracy"
+      method: "Kiểm tra import/require khớp với tree"
+      pass: "Dependencies khớp với component_tree"
+      fail: "Có dependency không được khai báo"
+```
+
+### 2. Map vs Doc Consistency
+
+```yaml
+check_map_vs_doc:
+  description: ".map/ có đồng bộ với .doc/ không?"
+  
+  checks:
+    - name: "Progress sync"
+      method: "So sánh PROGRESS.md với map status"
+      pass: "Task status trong doc khớp với map"
+      fail: "Task đánh dấu done nhưng map chưa update"
+      
+    - name: "Component documentation"
+      method: "Kiểm tra component trong doc"
+      pass: "Mọi component đều được document"
+      fail: "Component có trong map nhưng không có trong doc"
+```
+
+### 3. Contract vs Implementation Consistency
+
+```yaml
+check_contract_vs_impl:
+  description: "Implementation có tuân thủ contract không?"
+  condition: "Chỉ check nếu có .agent/*CONTRACT.md"
+  
+  checks:
+    - name: "API signature"
+      method: "So sánh function signatures"
+      pass: "Signatures khớp với contract"
+      fail: "Signature mismatch với contract"
+      
+    - name: "Error handling"
+      method: "Kiểm tra error cases"
+      pass: "Mọi error case đều handled theo contract"
+      fail: "Thiếu error handling theo contract"
+      
+    - name: "Data types"
+      method: "Kiểm tra type definitions"
+      pass: "Types khớp với contract"
+      fail: "Type mismatch với contract"
+```
+
+### 4. Task vs Code Consistency
+
+```yaml
+check_task_vs_code:
+  description: "Code có hoàn thành task requirements?"
+  
+  checks:
+    - name: "Task completion"
+      method: "Kiểm tra task T{n} có code tương ứng"
+      pass: "Task có implementation"
+      fail: "Task đánh dấu done nhưng không có code"
+      
+    - name: "Requirements met"
+      method: "So sánh code với task requirements"
+      pass: "Code đáp ứng mọi requirements"
+      fail: "Code thiếu requirements"
+```
+
+### 5. Bug vs Fix Consistency
+
+```yaml
+check_bug_vs_fix:
+  description: "Bug fix có giải quyết vấn đề?"
+  
+  checks:
+    - name: "Fix completeness"
+      method: "Kiểm tra fix có trong code"
+      pass: "Bug được fix và verified"
+      fail: "Bug trong list nhưng chưa fix"
+      
+    - name: "Regression check"
+      method: "Kiểm tra không gây regression"
+      pass: "Không có regression"
+      fail: "Fix gây lỗi ở chỗ khác"
+```
+
+---
+
+## Execution Flow
+
+```
+[Trigger: Pre-transition check]
+        │
+        ▼
+[AUTO-RUN] Python import và chạy validation
+        │
+        ├── from .agent.consistency.validator import run_validation
+        ├── report = run_validation()
+        ├── Check drift_threshold.yaml
+        ├── Chạy 5 validators:
+        │   ├── ContractCodeValidator
+        │   ├── MapCodeValidator
+        │   ├── DocRealityValidator
+        │   └── StateTransitionValidator
+        └── Áp dụng auto-fix nếu enabled
+        │
+        ▼
+[Check Results]
+        │
+        ├── Score >= threshold? → Allow transition
+        │   ├── Update consistency_flags
+        │   └── Log PASS
+        │
+        └── Score < threshold? → BLOCK transition
+            ├── Chạy auto-fix nếu drift < 5%
+            ├── Retry validation
+            └── Nếu vẫn fail: require manual intervention
+        │
+        ▼
+[Log to .agent/consistency/reports/]
+```
+
+### Auto-Validation Integration
+
+```python
+# Cách gọi tự động trong Python workflow
+from .agent.consistency.validator import run_validation
+
+# Chạy validation
+report = run_validation(
+    config_path=".agent/consistency/config.yaml",
+    output_path=".agent/consistency/reports/consistency_{timestamp}.md"
+)
+
+# Kiểm tra kết quả
+if report.overall_status.value == "fail":
+    block_transition()
+else:
+    allow_transition()
+```
+
+```yaml
+auto_validation:
+  trigger:
+    - "pre_phase_transition"
+    - "post_code_commit"
+    - "post_bug_fix"
+    - "manual_request"
+    
+  execution_mode: "automatic_python_call"  # Không dùng CLI
+  
+  python_call: "run_validation(config_path, output_path)"
+  
+  config_files:
+    - ".agent/consistency/config.yaml"
+    - ".agent/consistency/rules/drift_threshold.yaml"
+    - ".agent/consistency/auto_fix/auto_fix_rules.yaml"
+    
+  thresholds:
+    min_score: 80
+    max_critical_failures: 0
+    max_error_failures: 2
+    
+  auto_fix:
+    enabled: true
+    max_drift_percent: 5
+    allowed_fixes:
+      - map_update
+      - doc_sync
+      - hash_cache_refresh
+      
+  on_failure:
+    action: "block_pipeline"
+    create_ticket: true
+    notify: [console, state_update]
+```
+
+### Integration with Validation Gates
+
+```yaml
+gate_integration:
+  gate_4_consistency:
+    tool: "run_validation()"
+    python_module: ".agent/consistency.validator"
+    pass_criteria:
+      - overall_score >= 80
+      - no_critical_failures
+      - no_contract_mismatch
+    retry: 1
+    on_fail: "auto_fix_then_retry"
+```
+
+---
+
+## Output Format
+
+### Consistency Report
+
+```yaml
+consistency_check:
+  timestamp: "2026-03-30T10:30:00Z"
+  trigger: "pre_transition_coding_to_scan"
+  
+  results:
+    code_vs_map:
+      status: "PASS"
+      details: "All components match"
+      
+    map_vs_doc:
+      status: "FAIL"
+      details: "Task T3 marked done but not in map"
+      issues:
+        - "src/components/Timeline.tsx: Not in component_tree.yaml"
+        
+    contract_vs_impl:
+      status: "PASS"
+      
+    task_vs_code:
+      status: "PASS"
+      
+    bug_vs_fix:
+      status: "PASS"
+      
+  overall: "FAIL"
+  block_transition: true
+  
+  fix_suggestions:
+    - "Update .map/current/component_tree.yaml to include Timeline"
+    - "Run .router/05_ARCH.md to sync map"
+```
+
+---
+
+## Integration with STATE.md
+
+```yaml
+state_integration:
+  before_transition:
+    - action: "Run consistency checker"
+    - condition: "All checks PASS"
+    - then: "Allow transition"
+    - else: "BLOCK, show fix suggestions"
+    
+  update_state:
+    on_pass: 
+      - "Update STATE.md consistency_flags"
+      - "Log to .token/consistency/PASS.yaml"
+    on_fail:
+      - "Update STATE.md blockers"
+      - "Log to .token/consistency/FAIL.yaml"
+```
+
+---
+
+*Consistency checker đảm bảo mọi file đồng bộ trước khi chuyển phase.*
+
+---
+
+## 🔴 HARD RULES - BẮT BUỘC
+
+### Rule 1: AI Không Được Sửa STATE.md Trực Tiếp
+
+```markdown
+## 🚫 CẤM: Sửa STATE.md bằng tay
+
+AI KHÔNG ĐƯỢC:
+- Edit file `.state/STATE.md` trực tiếp
+- Dùng tools edit để thay đổi phase
+- Bypass state machine logic
+
+AI PHẢI:
+- Dùng CLI: `zoh transition <phase>`
+
+**Vi phạm = Transition INVALID, không được audit log**
+```
+
+### Rule 2: Validation Phải Pass Trước Khi Chuyển Phase
+
+```markdown
+## ⚠️ BẮT BUỘC: Validation Pass
+
+Trước khi chuyển phase, AI PHẢI:
+1. Chạy: `zoh validate`
+2. Kiểm tra output: `overall_status`
+3. Nếu FAIL → sửa lỗi → chạy lại
+4. Nếu PASS → được phép chuyển phase
+
+**Không được bỏ qua validation!**
+```
+
+### Rule 3: Sử Dụng CLI Cho Mọi Thao Tác
+
+```markdown
+## ⚠️ BẮT BUỘC: CLI Usage
+
+| Thao tác | Lệnh CLI |
+|----------|----------|
+| Chuyển phase | `zoh transition <phase>` |
+| Validation | `zoh validate` |
+| Fix drift | `zoh apply-fix --id <id> [--yes]` |
+| Complete task | `zoh task complete <id>` |
+| Check status | `zoh status` |
+| Create checkpoint | `zoh checkpoint create` |
+
+**Không dùng edit tools cho các thao tác này!**
+```

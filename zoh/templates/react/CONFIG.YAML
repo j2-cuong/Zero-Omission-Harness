@@ -1,64 +1,187 @@
-# .agent/consistency/config.yaml - REACT PRESET
-mode: light
+# .agent/consistency/config.yaml
+# ===========================================================
+# CONSISTENCY VALIDATOR CONFIGURATION - WEIGHTED SCORING
+# ===========================================================
 
+# Mode hoạt động: light | strict
+# - light: Bỏ qua một số validation không quan trọng, thích hợp prototype
+# - strict: Tất cả validation gates đều bắt buộc, production-ready
+mode: strict
+
+# Weighted scoring - advisory only, not hard gate initially
 scoring:
   enabled: true
   weights:
-    code_contract: 40
-    state_transition: 30
-    map_code: 15
-    doc_reality: 15
+    code_contract: 40      # Most important
+    state_transition: 30   # Important
+    map_code: 15           # Reference only
+    doc_reality: 15        # Reference only
   threshold_warning: 70
-  threshold_block: 50
+  threshold_block: 50      # Only block if very low
 
+# Validators priority
 validators:
   priority_1:
-    - code_contract
-    - state_transition
+    - code_contract        # Build first
+    - state_transition     # Build second
   priority_2:
-    - map_code
-    - doc_reality
+    - map_code             # Simple grep-based
+    - doc_reality          # Simple grep-based
 
+# Thresholds - conservative initially
 thresholds:
-  contract_code_match: 90
-  map_file_sync: 80
-  doc_accuracy: 70
-  state_consistency: 100
+  contract_code_match: 100    # Không chấp nhận sai lệch
+  map_file_sync: 90           # Warning nếu > 10% lệch (relaxed)
+  doc_accuracy: 80            # Warning nếu < 80% coverage (relaxed)
+  state_consistency: 100      # State phải chính xác 100%
 
-# React-specific patterns
+# Patterns - Dynamic Regex for different languages
 patterns:
-  react:
-    components:
-      - r'function\s+(?P<name>[A-Z]\w+)'
-      - r'const\s+(?P<name>[A-Z]\w+)\s*=\s*(?:\([^)]*\)|props)\s*=>'
-    hooks:
-      - r'const\s+\[(?P<state>\w+),\s+set\w+\]\s*=\s*useState'
-      - r'useEffect\(\s*\(\s*\)\s*=>'
+  python:
+    endpoints:
+      - r'@app\.(?P<method>get|post|put|delete|patch)\([\'"](?P<path>/[^\'"]+)[\'"]\)'
+  javascript:
+    endpoints:
+      - r'router\.(?P<method>get|post|put|delete|patch)\([\'"](?P<path>/[^\'"]+)[\'"]\)'
+  cs:
+    endpoints:
+      - r'\[(?P<method>HttpGet|HttpPost|HttpPut|HttpDelete|HttpPatch)\([\'"](?P<path>[^\'"]+)[\'"]\)\]'
 
+# External Parsers Hook - Call CLI scripts for complex parsing
+external_parsers:
+  javascript: "" # Example: "node ./scripts/parse_js.js"
+  cpp: ""        # Example: "python ./scripts/parse_cpp.py"
+
+# Auto-fix - VERY CONSERVATIVE
+auto_fix:
+  enabled: true
+  safe_fixes_only: true       # Only safe drifts
+  require_approval: true      # true: cần user gõ APPROVED
+  dry_run_first: true         # Luôn tạo dry-run trước
+
+  allowed_fixes:
+    - map_file_sync           # Safe: add missing file to map
+    - doc_timestamp_update    # Safe: update timestamp
+    - hash_cache_refresh      # Safe: refresh cache
+
+  # Các fix type không cần approval (chỉ áp dụng trong light mode)
+  light_mode_auto_fix:
+    - hash_cache_refresh
+    - timestamp
+
+  NOT_allowed_fixes:
+    - contract_code_match     # Never auto-fix contract-code drift
+    - doc_content_sync        # Never auto-fix doc content
+
+# Blocking rules - conservative initially
+blocking:
+  on_critical: true
+  on_error: true
+  on_warning: false           # Don't block on warning initially
+  use_score_as_gate: false    # Score is advisory only
+
+# Paths
 paths:
   code:
-    - .jsx
-    - .tsx
+    - .cpp
+    - .hpp
+    - .cs
+    - .py
     - .js
     - .ts
+    - .go
+    - .java
+    - .rs
   map:
     - .map/
     - ARCHITECTURE.md
   doc:
     - .doc/
     - README.md
+    - docs/
   contract:
     - .agent/contracts/
   state:
     - .state/STATE.md
     - .state/STATE_MACHINE.yaml
 
+# Checkpoint integration
+checkpoint:
+  auto_create_before_validation: true
+  auto_rollback_on_critical_fail: true
+
+# Lock integration
+lock:
+  enabled: true
+  mode: local                 # local hoặc distributed
+  heartbeat_interval: 300     # seconds (5 minutes)
+  timeout_hours: 2
+  auto_release_on_exit: true
+  require_lock_for_validation: false
+  auto_release_after_validation: true
+
+# Token management
 token:
-  management: manual
+  management: manual          # manual hoặc ide_based
+  alert_at: 80                # Alert khi đạt 80% budget
   budget_file: ".token/budget.yaml"
+  log_dir: ".token/logs"
+
   phases:
-    interview: {budget: 50000}
-    planning: {budget: 30000}
-    coding: {budget: 100000}
-    testing: {budget: 40000}
-    release: {budget: 10000}
+    interview:
+      budget: 50000
+      critical: false
+    planning:
+      budget: 30000
+      critical: false
+    coding:
+      budget: 100000
+      critical: true
+    testing:
+      budget: 40000
+      critical: true
+    bugfix:
+      budget: 50000
+      critical: true
+    release:
+      budget: 10000
+      critical: false
+
+# State machine configuration
+state:
+  transition_cli_only: true    # true: AI không được sửa STATE.md trực tiếp
+  state_file: ".state/STATE.md"
+  state_machine: ".state/STATE_MACHINE.yaml"
+  history_dir: ".state/history"
+  auto_checkpoint: true        # Auto checkpoint trước mỗi transition
+
+  # Guards evaluation
+  guards:
+    file_exists: true
+    task_list_complete: true
+    validation_gate_passed: true
+    no_active_lock: true
+
+# CLI configuration
+cli:
+  name: "zoh"
+  version: "1.0.0"
+
+  # Output formatting
+  output:
+    format: "rich"            # rich hoặc plain
+    color: true
+    verbose: false
+
+  # Logging
+  log_level: "INFO"         # DEBUG, INFO, WARNING, ERROR
+  log_file: ".agent/consistency/cli.log"
+
+# Notifications
+notifications:
+  on_fail: true
+  on_drift_detected: true
+  on_score_below_threshold: true
+  channels:
+    - console
+    - file_report

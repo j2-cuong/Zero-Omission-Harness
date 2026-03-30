@@ -1,0 +1,52 @@
+# ===========================================================
+# STATE HISTORY - Audit Trail
+# Log tất cả state transitions với metadata
+# ===========================================================
+
+history:
+  # Template cho audit entry
+  entry_template:
+    timestamp: "2026-03-30T10:00:00Z"
+    from: "INIT"
+    to: "REQUIREMENT_LOCKED"
+    by: "claude-sonnet-4"
+    session_id: "sess_abc123"
+    guard_result: "pass"
+    guard_details:
+      condition: "seven_tier_interview_complete"
+      check_results:
+        - check: "INTERVIEW_OUTPUT.yaml exists"
+          result: true
+        - check: "completeness_score >= 95%"
+          result: true
+          actual_score: 97
+    actions_executed:
+      - "generate_requirement_doc"
+      - "create_interview_output_yaml"
+      - "update_state"
+      - "log_transition"
+    checkpoint_id: "checkpoint_20260330_100000"
+    metadata:
+      token_usage: 4500
+      files_modified:
+        - ".agent/00_MASTER.md"
+        - ".agent/01_STRUCTURE.md"
+      user_approvals:
+        - requirement_doc: "approved"
+    
+  # Actual history entries (bắt đầu với empty list)
+  entries: []
+  
+  # Statistics
+  stats:
+    total_transitions: 0
+    failed_transitions: 0
+    auto_transitions: 0
+    manual_transitions: 0
+    average_guard_execution_time_ms: 0
+    
+  # Retention policy
+  retention:
+    keep_last_n_entries: 100
+    archive_after_n: 50
+    archive_location: ".state/history_archive/"

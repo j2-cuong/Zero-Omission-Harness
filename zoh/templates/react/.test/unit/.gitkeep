@@ -1,0 +1,4 @@
+# .test/unit/
+# Chứa unit test cho từng hàm độc lập
+# Naming: test_{module}_{function}.{ext}
+# Ví dụ: test_hmac_compute.cpp, test_api_validate.ts

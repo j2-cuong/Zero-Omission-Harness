@@ -1,0 +1,87 @@
+# ===========================================================
+# DISTRIBUTED LOCK SYSTEM v2.0
+# Khắc phục: timeout, heartbeat, race condition
+# ===========================================================
+
+lock_system:
+  version: "2.0.0"
+  type: distributed_with_timeout
+  
+  # Lock entry structure
+  lock_entry:
+    locked_by: "<AI-ID>"           # Ví dụ: claude-sonnet-4
+    locked_at: "2026-03-30T10:15:00Z"
+    expires_at: "2026-03-30T12:15:00Z"  # ✅ Timeout 2 hours
+    phase: "coding"               # Phase đang lock
+    session_id: "<SESSION-ID>"    # Unique session identifier
+    
+    # Heartbeat mechanism
+    heartbeat:
+      last_ping: "2026-03-30T10:15:00Z"
+      interval: 300s              # ✅ Ping mỗi 5 phút
+      max_missed: 2               # Cho phép miss 2 lần trước khi release
+      
+    # Lock scope
+    scope:
+      type: "exclusive"           # exclusive | shared | read
+      resources:                  # Resources bị lock
+        - ".agent/STATE.md"
+        - ".map/current/"
+        - "src/"
+      
+  # Conflict resolution
+  conflict_resolution:
+    strategy: last_heartbeat_wins  # Strategy khi conflict
+    
+    # Force unlock
+    force_unlock:
+      enabled: true
+      after: 3600s                  # Force unlock sau 1 giờ nếu không có heartbeat
+      require_reason: true          # Phải ghi lý do force unlock
+      notify_previous_owner: true
+      
+    # Escalation
+    escalation:
+      on_conflict: notify_both_parties
+      max_retries: 3
+      backoff: exponential
+      
+  # Lock file format
+  lock_file_format:
+    type: json_with_checksum
+    location: ".state/LOCK.json"
+    backup_location: ".state/LOCK.backup.json"
+    
+    # Checksum để tránh race condition
+    checksum:
+      algorithm: sha256
+      fields: [locked_by, locked_at, expires_at, session_id]
+      
+  # Cleanup
+  cleanup:
+    auto_release_expired: true
+    check_interval: 60s             # Kiểm tra expired locks mỗi phút
+    max_lock_duration: 7200s          # 2 giờ tối đa
+    
+  # Multi-session support
+  multi_session:
+    enabled: true
+    session_isolation: true         # Mỗi session có lock riêng
+    allow_concurrent_reads: true    # Cho phép đọc song song
+    
+  # Notifications
+  notifications:
+    on_lock_acquired:
+      - log
+      - state_update
+    on_lock_released:
+      - log
+      - state_update
+    on_lock_expired:
+      - log
+      - notify_owner
+      - state_flag
+    on_conflict_detected:
+      - log
+      - notify_both
+      - suggest_resolution

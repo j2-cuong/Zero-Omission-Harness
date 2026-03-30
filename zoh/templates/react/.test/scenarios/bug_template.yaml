@@ -1,0 +1,180 @@
+# ===========================================================
+# BUG TEMPLATE v2.0 - Test-driven debugging
+# ===========================================================
+
+bug_template:
+  version: "2.0.0"
+  
+  # Required fields cho mỗi bug report
+  required_fields:
+    metadata:
+      - bug_id           # Format: BUG_{timestamp}_{component}
+      - title
+      - component
+      - severity         # critical | high | medium | low
+      - priority         # p0 | p1 | p2 | p3
+      - reported_by
+      - reported_at      # ISO-8601 timestamp
+      
+    reproduction:
+      - environment      # OS, version, dependencies
+      - prerequisites    # Setup cần thiết
+      - steps            # Step-by-step để reproduce
+      - expected_behavior
+      - actual_behavior
+      - frequency        # always | often | sometimes | rarely
+      
+    test_definition:
+      - test_command     # Command để chạy test
+      - test_file        # File test tương ứng
+      - input_data       # Input cho test
+      - expected_output  # Output mong đợi
+      
+    analysis:
+      - root_cause       # Điều tra nguyên nhân
+      - affected_files   # Files bị ảnh hưởng
+      - impact_analysis  # Ảnh hưởng đến hệ thống
+
+  # Bug lifecycle
+  lifecycle:
+    states:
+      new:
+        description: "Bug vừa được báo cáo"
+        required_action: "triage"
+        auto_actions:
+          - create_test_file
+          - assign_to_component
+          
+      triaged:
+        description: "Đã phân loại và gán"
+        entry_condition: "severity_assigned AND component_assigned"
+        required_action: "investigate"
+        
+      investigation:
+        description: "Đang điều tra root cause"
+        entry_condition: "reproducibility_confirmed"
+        required_action: "find_root_cause"
+        
+      confirmed:
+        description: "Test đã reproduce bug thành công"
+        entry_condition: "test_fails AND bug_reproduced"
+        required_action: "fix"
+        auto_actions:
+          - link_to_task
+          - update_progress
+          
+      in_fix:
+        description: "Đang sửa bug"
+        entry_condition: "root_cause_found"
+        required_action: "implement_fix"
+        
+      fixed:
+        description: "Fix đã implement"
+        entry_condition: "code_changed"
+        required_action: "verify"
+        auto_actions:
+          - run_bug_test
+          - run_regression_tests
+          
+      verified:
+        description: "Test pass, regression tests pass"
+        entry_condition: "bug_test_passed AND regression_passed"
+        required_action: "close"
+        
+      closed:
+        description: "Bug đóng"
+        entry_condition: "all_tests_pass"
+        auto_actions:
+          - update_documentation
+          - notify_stakeholders
+          - archive_bug_report
+
+  # Auto-actions
+  auto_actions:
+    on_bug_reported:
+      - "create_test_file_from_template"
+      - "assign_to_component_lead"
+      - "update_bug_dashboard"
+      
+    on_fix_commit:
+      - "run_bug_test_automatically"
+      - "check_related_components"
+      - "update_progress"
+      
+    on_merge:
+      - "run_all_bug_tests_for_regression"
+      - "run_component_tests"
+      - "update_coverage_report"
+      
+    on_test_fail:
+      - "notify_developer"
+      - "update_bug_status"
+      - "attach_logs"
+      
+    on_test_pass:
+      - "notify_bug_reporter"
+      - "update_progress"
+      - "mark_verified"
+
+  # Test requirements
+  test_requirements:
+    unit_test:
+      required: true
+      coverage: "affected_functions"
+      format: "standard_unit_test"
+      
+    integration_test:
+      required_if: "crosses_component_boundary"
+      format: "integration_scenario"
+      
+    regression_test:
+      required: true
+      scope: "related_functionality"
+      
+    memory_test:
+      required_if: "involves_memory_management"
+      
+    concurrency_test:
+      required_if: "involves_threading"
+
+  # Test format standard
+  test_format:
+    file_location: ".test/scenarios/bug_{bug_id}.md"
+    structure:
+      header:
+        - bug_id
+        - title
+        - component
+        - severity
+        
+      setup:
+        - environment_setup
+        - data_preparation
+        
+      steps:
+        - reproduction_steps
+        
+      assertions:
+        - expected_result
+        - actual_result
+        - pass_criteria
+        
+      cleanup:
+        - cleanup_steps
+        
+  # Escalation
+  escalation:
+    p0_critical:
+      response_time: "15 minutes"
+      auto_assign: "senior_developer"
+      notify: [tech_lead, product_manager]
+      
+    p1_high:
+      response_time: "2 hours"
+      notify: [team_lead]
+      
+    p2_medium:
+      response_time: "24 hours"
+      
+    p3_low:
+      response_time: "1 week"

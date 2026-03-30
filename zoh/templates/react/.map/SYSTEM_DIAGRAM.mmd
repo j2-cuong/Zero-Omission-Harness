@@ -1,0 +1,324 @@
+# SYSTEM_DIAGRAM.mmd — Sơ Đồ Logic Hệ Thống AI Agent Base
+> **Format:** Mermaid (tương thích với Mermaid Editor)
+> **Mô tả:** Luồng tự động hoàn chỉnh với đánh dấu auto-generated
+
+```mermaid
+flowchart TB
+    subgraph START["🚀 START"]
+        S1[User: Bắt đầu dự án mới]
+    end
+
+    subgraph PHASE_1["📋 PHASE 1: INTERVIEW"]
+        direction TB
+        I1[Load .router/00_INTERVIEW.md]
+        I2{INTERVIEW_OUTPUT.yaml<br/>tồn tại?}
+        I3[Resume từ checkpoint]
+        I4[Bắt đầu Tier 0]
+        I5[Tier 0-6: ~50 câu hỏi]
+        I6[Log token/câu<br/>.token/interview/]
+        I7[Validate câu trả lời]
+        I8[Save checkpoint<br/>INTERVIEW_OUTPUT.yaml]
+        I9{Interview<br/>hoàn thành?}
+        I10[Status: complete]
+        
+        I2 -->|Có| I3
+        I2 -->|Không| I4
+        I3 --> I5
+        I4 --> I5
+        I5 --> I6
+        I6 --> I7
+        I7 --> I8
+        I8 --> I9
+        I9 -->|Chưa| I5
+        I9 -->|Xong| I10
+    end
+
+    subgraph PHASE_2["🔧 PHASE 2: AUTO GENERATE"]
+        direction TB
+        G1["Phân tích INTERVIEW_OUTPUT.yaml<br/>🔍 Auto"]
+        
+        subgraph AGENT["📁 Sinh .agent/*<br/>🔧 Auto Generated"]
+            A1["00_MASTER.md<br/>⬅️ project.name, purpose"]
+            A2["01_STRUCTURE.md<br/>⬅️ architecture.components"]
+            A3["02_TASK_LIST.md<br/>⬅️ 01_STRUCTURE.md"]
+            A4["03_*_CONTRACT.md<br/>⬅️ contracts.* (N/A if none)"]
+            A5["05_RULES_{LANG}.md<br/>⬅️ .skill/{lang}.md + interview"]
+            A6["06_BUILD_CONFIG.md<br/>⬅️ technology.build_deploy"]
+        end
+        
+        subgraph SKILL["📚 Sinh .skill/*<br/>🔧 Auto Generated"]
+            S2{".skill/{lang}.md<br/>tồn tại?"}
+            S3["Skip<br/>(đã có)"]
+            S4["Tạo mới .skill/{lang}.md<br/>⬅️ _shared.md + technology"]
+        end
+        
+        subgraph TEST["🧪 Sinh .test/*<br/>🔧 Auto Generated"]
+            T1["scenarios/T{n}_{name}.md<br/>⬅️ 02_TASK_LIST.md<br/>⬅️ 01_STRUCTURE.md"]
+        end
+        
+        subgraph MAP["🗺️ Sinh .map/*<br/>🔧 Auto Generated"]
+            M1["current/component_tree.yaml<br/>⬅️ architecture.components"]
+            M2["current/data_flow.mmd<br/>⬅️ architecture.data_flow"]
+            M3["refs/ (directory)<br/>Ready for links"]
+        end
+        
+        subgraph DOC["📝 Sinh .doc/*<br/>🔧 Auto Generated"]
+            D1["PROGRESS.md<br/>⬅️ 02_TASK_LIST.md"]
+        end
+        
+        subgraph STATE["⚙️ Update STATE.md<br/>🔧 Auto"]
+            ST1["phase: planning<br/>current_task: Review<br/>next_action: [PENDING APPROVAL]"]
+        end
+        
+        subgraph TOKEN_GEN["💰 Log Token<br/>🔧 Auto"]
+            TG1[".token/coding/INIT.yaml"]
+        end
+        
+        G1 --> AGENT
+        G1 --> SKILL
+        A3 --> TEST
+        G1 --> MAP
+        G1 --> DOC
+        G1 --> STATE
+        G1 --> TOKEN_GEN
+        
+        S2 -->|Có| S3
+        S2 -->|Không| S4
+    end
+
+    subgraph GATE["🚦 USER APPROVAL GATE<br/>⚠️ BẮT BUỘC"]
+        direction TB
+        GA1["User review:<br/>• .agent/00_MASTER.md<br/>• .agent/01_STRUCTURE.md<br/>• .agent/02_TASK_LIST.md<br/>• .skill/{lang}.md (nếu mới)"]
+        GA2{User nói gì?}
+        GA3["'sửa [file]'<br/>→ Regenerate"]
+        GA4["'approve'<br/>→ Sang coding"]
+        GA5["Update STATE.md:<br/>phase: coding"]
+        
+        GA1 --> GA2
+        GA2 -->|Sửa| GA3
+        GA3 --> GA1
+        GA2 -->|Approve| GA4
+        GA4 --> GA5
+    end
+
+    subgraph PHASE_3["💻 PHASE 3: CODING"]
+        direction TB
+        C1["Load .agent/02_TASK_LIST.md"]
+        C2["Load .agent/05_RULES_{LANG}.md"]
+        C3["Load .skill/{lang}.md"]
+        C4["Load .test/scenarios/T{n}.md"]
+        
+        subgraph TASK_LOOP["🔁 Vòng lặp từng Task"]
+            T5["Task T{n}"]
+            T6["Code theo:<br/>• .agent/rules<br/>• .skill/language<br/>• .test/scenarios"]
+            T7["Update .map/current/ nếu cần"]
+            T8["Update .doc/PROGRESS.md"]
+            T9["Log token<br/>.token/coding/T{n}.yaml"]
+            T10{Task xong?}
+            
+            T5 --> T6 --> T7 --> T8 --> T9 --> T10
+            T10 -->|Chưa xong| T6
+        end
+        
+        C1 --> C2 --> C3 --> C4 --> TASK_LOOP
+        T10 -->|Xong| C11["Tất cả tasks hoàn thành"]
+    end
+
+    subgraph PHASE_4["🔍 PHASE 4: BUG SCAN + INIT .bug/"]
+        direction TB
+        SC0["Khởi tạo .bug/ nếu chưa có<br/>🔧 Auto"]
+        SC1["Scan từ:<br/>• .map/current/<br/>• .doc/PROGRESS.md<br/>• src/ code"]
+        SC2["Phát hiện bugs"]
+        SC3["Ghi .bug/01_SCAN_LOG.md"]
+        SC4["Update .bug/02_BUG_LIST.md"]
+        SC5{"Tìm thấy bug?"}
+        SC6["Log token<br/>.token/bugfix/SCAN.yaml"]
+        
+        SC0 --> SC1 --> SC2 --> SC3 --> SC4 --> SC5 --> SC6
+    end
+
+    subgraph PHASE_5["🛠️ PHASE 5: BUGFIX LOOP"]
+        direction TB
+        BF1["Chọn bug BUG-{id}"]
+        
+        subgraph FIX_LOOP["🔁 Vòng lặp Fix"]
+            F1["Tạo .sim/dry_run_{id}.md<br/>Simulation"]
+            F2["Log token<br/>.token/bugfix/SIM.yaml"]
+            F3["Apply fix vào code"]
+            F4["Tạo .map/diff/v{X}_to_v{Y}.yaml"]
+            F5["Update .map/refs/BUG-{id}.yaml"]
+            F6["Update .bug/02_BUG_LIST.md<br/>Status: FIXED"]
+            F7["Log token<br/>.token/bugfix/BUG-{id}.yaml"]
+            F8{Bug còn lại?}
+            
+            F1 --> F2 --> F3 --> F4 --> F5 --> F6 --> F7 --> F8
+            F8 -->|Còn| F1
+        end
+        
+        BF1 --> FIX_LOOP
+        F8 -->|Hết| BF9["Tất cả bugs fixed"]
+    end
+
+    subgraph PHASE_6["🧪 PHASE 6: TEST"]
+        direction TB
+        TE1["Run tests từ .test/scenarios/"]
+        TE2["So sánh với expected results"]
+        TE3{"Pass?"}
+        TE4["Update .doc/PROGRESS.md<br/>Test results"]
+        TE5["Log token<br/>.token/test/TEST.yaml"]
+        
+        TE1 --> TE2 --> TE3 --> TE4 --> TE5
+    end
+
+    subgraph DECISION["🎯 DECISION"]
+        D11{"Kết quả test?"}
+        D12["Có bug mới?<br/>→ PHASE 5"]
+        D13["Pass hết?<br/>→ RELEASE"]
+        D14["Thêm feature?<br/>→ PHASE 1 (partial)"]
+        
+        D11 -->|Fail| D12
+        D11 -->|Pass| D13
+        D11 -->|New feature| D14
+    end
+
+    subgraph RELEASE["🎉 RELEASE"]
+        R1["Tổng hợp token<br/>.token/summary/{project}.yaml"]
+        R2["Final docs<br/>.doc/PROGRESS.md"]
+        R3["Archive .map/diff/"]
+    end
+
+    subgraph DAILY["📊 DAILY TRACKING"]
+        DA1["Mỗi ngày:<br/>.token/daily/{YYYY-MM-DD}.yaml"]
+    end
+
+    %% Connections
+    START --> PHASE_1
+    PHASE_1 --> PHASE_2
+    PHASE_2 --> GATE
+    GATE --> PHASE_3
+    PHASE_3 --> PHASE_4
+    PHASE_4 --> PHASE_5
+    PHASE_5 --> PHASE_6
+    PHASE_6 --> DECISION
+    DECISION -->|Bug mới| PHASE_5
+    DECISION -->|Release| RELEASE
+    DECISION -->|Feature mới| PHASE_1
+    
+    %% Side connections
+    PHASE_3 -.->|Cập nhật liên tục| DAILY
+    PHASE_5 -.->|Cập nhật liên tục| DAILY
+    PHASE_6 -.->|Cập nhật liên tục| DAILY
+
+    %% Styling
+    style START fill:#e1f5fe
+    style PHASE_1 fill:#fff3e0
+    style PHASE_2 fill:#e8f5e9
+    style GATE fill:#ffebee
+    style PHASE_3 fill:#e3f2fd
+    style PHASE_4 fill:#fce4ec
+    style PHASE_5 fill:#f3e5f5
+    style PHASE_6 fill:#e0f2f1
+    style DECISION fill:#fff9c4
+    style RELEASE fill:#b9f6ca
+    style DAILY fill:#f5f5f5
+    
+    style AGENT fill:#c8e6c9
+    style SKILL fill:#c8e6c9
+    style TEST fill:#c8e6c9
+    style MAP fill:#c8e6c9
+    style DOC fill:#c8e6c9
+    style STATE fill:#c8e6c9
+    style TOKEN_GEN fill:#c8e6c9
+```
+
+---
+
+## Legend (Chú Thích)
+
+| Ký hiệu | Ý nghĩa |
+|---------|---------|
+| 🔧 Auto Generated | File được tự động sinh từ input |
+| ⬅️ Input | Nguồn dữ liệu để sinh |
+| 🚦 Gate | Điểm dừng chờ user action |
+| 🔁 Loop | Vòng lặp cho đến khi hoàn thành |
+| ⚠️ BẮT BUỘC | Không thể skip |
+
+---
+
+## Chi Tiết Auto-Generated Files
+
+```
+PHASE 2 (Auto Generate) sinh ra:
+├── .agent/
+│   ├── 00_MASTER.md           ⬅️ INTERVIEW_OUTPUT.yaml[project]
+│   ├── 01_STRUCTURE.md        ⬅️ INTERVIEW_OUTPUT.yaml[architecture]
+│   ├── 02_TASK_LIST.md        ⬅️ 01_STRUCTURE.md
+│   ├── 03_*_CONTRACT.md       ⬅️ INTERVIEW_OUTPUT.yaml[contracts]
+│   ├── 05_RULES_{LANG}.md     ⬅️ .skill/{lang}.md + INTERVIEW_OUTPUT
+│   └── 06_BUILD_CONFIG.md     ⬅️ INTERVIEW_OUTPUT.yaml[technology]
+│
+├── .skill/
+│   └── {lang}.md              ⬅️ _shared.md + INTERVIEW_OUTPUT[technology]
+│
+├── .test/
+│   └── scenarios/T{n}_*.md    ⬅️ 02_TASK_LIST.md + 01_STRUCTURE.md
+│
+├── .map/
+│   ├── current/component_tree.yaml  ⬅️ INTERVIEW_OUTPUT[architecture]
+│   ├── current/data_flow.mmd        ⬅️ INTERVIEW_OUTPUT[architecture]
+│   └── refs/ (empty, ready)          ⬅️ Created
+│
+├── .doc/
+│   └── PROGRESS.md            ⬅️ 02_TASK_LIST.md
+│
+├── .agent/STATE.md            ⬅️ phase: planning
+│
+└── .token/coding/INIT.yaml    ⬅️ Log generation tokens
+```
+
+## .bug/ Được Tạo Sau Khi Code Xong (PHASE 4)
+
+```
+PHASE 4 (Bug Scan) tạo .bug/:
+└── .bug/
+    ├── 01_SCAN_LOG.md         ⬅️ Kết quả scan từ .map/, .doc/, src/
+    └── 02_BUG_LIST.md         ⬅️ Bugs phát hiện được (auto-gen template)
+```
+
+## Chi Tiết Coding Phase
+
+```
+PHASE 3 (Coding) - Mỗi task:
+Input:
+  • .agent/02_TASK_LIST.md[T{n}]
+  • .agent/05_RULES_{LANG}.md
+  • .skill/{lang}.md
+  • .test/scenarios/T{n}.md
+  
+Output:
+  • Code file
+  • .map/current/ (nếu component mới)
+  • .doc/PROGRESS.md (status update)
+  • .token/coding/T{n}.yaml (token log)
+```
+
+## Chi Tiết Bugfix Phase
+
+```
+PHASE 5 (Bugfix) - Mỗi bug:
+Input:
+  • .bug/02_BUG_LIST.md[BUG-{id}]
+  • Code cần fix
+  
+Output:
+  • .sim/dry_run_{id}.md
+  • Fixed code
+  • .map/diff/v{X}_to_v{Y}.yaml
+  • .map/refs/BUG-{id}.yaml
+  • Updated .bug/02_BUG_LIST.md
+  • .token/bugfix/BUG-{id}.yaml
+```
+
+---
+
+*Diagram này có thể paste trực tiếp vào [Mermaid Live Editor](https://mermaid.live/)*
