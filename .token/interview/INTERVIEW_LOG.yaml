@@ -1,0 +1,80 @@
+# INTERVIEW_LOG.yaml — Token Log cho Interview Phase
+> **Phase:** Interview
+> **File:** .token/interview/INTERVIEW_LOG.yaml
+
+session:
+  session_id: "interview_{timestamp}"
+  project_name: ""
+  start_time: ""
+  end_time: ""
+  status: "in_progress" | "complete"
+  
+budget:
+  allocated: 10000
+  used: 0
+  remaining: 10000
+  questions_count: 0
+  
+tiers:
+  tier_0_basic:
+    status: "pending"
+    questions: []
+    
+  tier_1_architecture:
+    status: "pending"
+    questions: []
+    
+  tier_2_contracts:
+    status: "skipped"  # N/A nếu đơn giản
+    questions: []
+    
+  tier_3_constraints:
+    status: "skipped"
+    questions: []
+    
+  tier_4_technology:
+    status: "pending"
+    questions: []
+    
+  tier_5_performance:
+    status: "skipped"
+    questions: []
+    
+  tier_6_exceptions:
+    status: "skipped"
+    questions: []
+
+# Template cho mỗi câu hỏi
+question_template:
+  q_id: "Q{n}-Tier{x}"
+  tier: 0-6
+  category: "basic" | "architecture" | "contracts" | "constraints" | "technology" | "performance" | "exceptions"
+  
+  question:
+    text: ""
+    context_loaded: []  # Files loaded để hỏi
+    
+  tokens:
+    prompt_tokens: 0    # System + context + question
+    response_tokens: 0  # User answer
+    total: 0
+    
+  user_response:
+    summary: ""
+    key_points: []
+    
+  result:
+    validated: true | false
+    needs_clarification: false
+    
+  timestamp:
+    asked_at: ""
+    answered_at: ""
+    
+  follow_up_questions: []  # Nếu cần làm rõ
+
+# Summary
+total_questions: 0
+total_tokens_used: 0
+avg_tokens_per_question: 0
+interview_output_file: ".workflow/interview/INTERVIEW_OUTPUT.yaml"

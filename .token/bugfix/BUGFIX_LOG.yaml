@@ -1,0 +1,90 @@
+# BUGFIX_LOG.yaml — Token Log cho Bugfix Phase
+> **Phase:** Bugfix
+> **File:** .token/bugfix/BUGFIX_LOG.yaml
+
+session:
+  session_id: "bugfix_{timestamp}"
+  project_name: ""
+  start_time: ""
+  status: "in_progress"
+  
+budget:
+  allocated: 20000
+  used: 0
+  remaining: 20000
+  bugs_fixed: 0
+  bugs_pending: 0
+  
+bugs: []
+
+# Template cho mỗi bug
+bug_template:
+  bug_id: "BUG-{nn}"
+  title: ""
+  severity: "Critical" | "Important" | "Minor"
+  
+  detection:
+    source: "scan" | "test" | "user_report"
+    scan_log_file: ".bug/01_SCAN_LOG.md"
+    detected_at: ""
+    
+  analysis:
+    files_affected: []
+    root_cause: ""
+    impact_assessment: ""
+    
+    tokens:
+      analysis_prompt: 0
+      analysis_response: 0
+      
+  simulation:
+    sim_file: ".sim/dry_run_{id}.md"
+    required: true
+    
+    tokens:
+      sim_prompt: 0
+      sim_response: 0
+      
+    cascade_risk:
+      modules_affected: []
+      breaking_change: false
+      
+  fix:
+    attempts: 0
+    approach: "direct" | "workaround" | "refactor"
+    
+    tokens:
+      fix_prompt: 0
+      fix_response: 0
+      validation: 0
+      
+    edits:
+      files_modified: []
+      lines_changed: 0
+      
+  verification:
+    tests_passed: true | false
+    regression_tests: true | false
+    manual_check: true | false
+    
+  map_updates:
+    diff_file_created: ".map/diff/"
+    component_tree_updated: false
+    refs_file: ".map/refs/BUG-{id}.yaml"
+    
+  tokens:
+    total: 0
+    
+  timestamp:
+    detected: ""
+    fixed: ""
+    verified: ""
+    
+  status: "OPEN" | "SIM_PENDING" | "APPROVED" | "FIXED" | "VERIFIED"
+
+# Summary
+total_bugs_fixed: 0
+total_bugs_remaining: 0
+total_tokens_used: 0
+avg_tokens_per_bug: 0
+map_diffs_created: []

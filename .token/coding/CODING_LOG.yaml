@@ -1,0 +1,78 @@
+# CODING_LOG.yaml — Token Log cho Coding Phase
+> **Phase:** Coding
+> **File:** .token/coding/CODING_LOG.yaml
+
+session:
+  session_id: "coding_{timestamp}"
+  project_name: ""
+  start_time: ""
+  status: "in_progress"
+  
+budget:
+  allocated: 50000
+  used: 0
+  remaining: 50000
+  tasks_completed: 0
+  tasks_total: 0
+  
+tasks: []
+
+# Template cho mỗi task
+task_template:
+  task_id: "T{n}"
+  task_name: ""
+  file_output: ""
+  
+  planning:
+    files_to_read: []
+    context_estimate: 0
+    
+  execution:
+    attempts: 0
+    edits_made: 0
+    
+  tokens:
+    # Phase 1: Read & Plan
+    read_files_tokens: 0
+    planning_tokens: 0
+    
+    # Phase 2: Code
+    code_prompt_tokens: 0
+    code_response_tokens: 0
+    
+    # Phase 3: Validate
+    validation_tokens: 0
+    
+    total: 0
+    
+  context:
+    files_loaded: []
+    total_lines: 0
+    
+  result:
+    status: "success" | "failed" | "retry"
+    file_created: true | false
+    tests_passed: true | false | null
+    
+  errors:
+    compile_errors: 0
+    lint_errors: 0
+    runtime_errors: 0
+    
+  timestamp:
+    started: ""
+    completed: ""
+    duration_minutes: 0
+    
+  next_task_dependencies: []
+
+# Summary
+files_created: []
+total_edits: 0
+total_compile_errors: 0
+test_coverage: 0
+
+agent_files_updated:
+  - ".agent/STATE.md"
+  - ".map/current/"
+  - ".doc/PROGRESS.md"
