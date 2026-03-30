@@ -167,6 +167,23 @@ apply_fix:
   step_5:
     action: "Update .bug/02_BUG_LIST.md"
     log_tokens: "status_update"
+    
+  step_6_token_log:
+    action: "🔴 BẮT BUỘC: Log token usage"
+    output: ".token/bugfix/BUG_{id}.yaml"
+    mandatory: true
+    fail_action: "KHÔNG ĐƯỢC ĐÁNH DẤU BUG FIXED"
+    format:
+      bug_id: "BUG-{id}"
+      timestamp_start: "ISO-8601"
+      timestamp_end: "ISO-8601"
+      tokens:
+        analysis: 600
+        sim_creation: 300
+        fix_implementation: 800
+        map_diff: 200
+        total: 3300
+      result: "FIXED|FAILED|REJECTED"
 ```
 
 ---

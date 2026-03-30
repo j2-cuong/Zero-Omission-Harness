@@ -298,7 +298,7 @@ user_approval_step:
 
 ---
 
-## Step 14: Validation
+## Step 14: Final Validation
 
 ```yaml
 validate_all:
@@ -307,48 +307,30 @@ validate_all:
     - "01_STRUCTURE.md: Cấu trúc đầy đủ"
     - "02_TASK_LIST.md: Tasks rõ ràng"
     - "05_RULES_{LANG}.md: Rules hợp lệ"
+    - "STATE.md: Phase = planning"
     
   .skill/:
-    - "{lang}.md: Kế thừa _shared.md"
+    - "{lang}.md: Kế thừa _shared.md, có language rules"
     
   .test/:
-    - "scenarios/: Mỗi task có test"
+    - "scenarios/: Mỗi task có ít nhất 1 test file"
+    - "Test format: Given/When/Then đúng chuẩn"
     
   .map/:
-    - "current/: component_tree, data_flow"
+    - "current/: component_tree.yaml, data_flow.mmd"
+    - "diff/: Initialized"
     - "refs/: Sẵn sàng cho task/bug links"
     
   .doc/:
     - "PROGRESS.md: Dashboard với tasks"
-```
-
----
-
-## Step 15: Final Validation
-
-```yaml
-validate_all:
-  .agent/:
-    - "00_MASTER.md: Vai trò, constraints"
-    - "01_STRUCTURE.md: Cấu trúc đầy đủ"
-    - "02_TASK_LIST.md: Tasks rõ ràng"
-    - "05_RULES_{LANG}.md: Rules hợp lệ"
-    
-  .skill/:
-    - "{lang}.md: Kế thừa _shared.md"
-    
-  .test/:
-    - "scenarios/: Mỗi task có test"
-    
-  .map/:
-    - "current/: component_tree, data_flow"
-    - "refs/: Sẵn sàng cho task/bug links"
-    
-  .doc/:
-    - "PROGRESS.md: Dashboard với tasks"
+    - "DECISION_LOG.md: Template ready"
     
   .bug/:
     - "02_BUG_LIST.md: Template ready"
+    
+  cross_reference:
+    - "Task list khớp với test scenarios"
+    - "Components khớp với component_tree"
 ```
 
 ---
@@ -369,8 +351,17 @@ approval_gate:
     - file: ".agent/02_TASK_LIST.md"
       reason: "Danh sách task"
       
-    - file: ".skill/{lang}.md" (nếu mới tạo)
+    - file: ".test/scenarios/T{n}_{name}.md"
+      reason: "Test cases cho mỗi task (BẮT BUỘC trước coding)"
+      
+    - file: ".skill/{lang}.md"
       reason: "Language rules cho project"
+      
+    - file: ".map/current/component_tree.yaml"
+      reason: "Architecture map hiện tại"
+      
+    - file: ".doc/PROGRESS.md"
+      reason: "Dashboard tiến độ dự án"
       
   user_actions:
     - option: "approve"
@@ -398,12 +389,69 @@ Sau khi tự động sinh:
 
 ```yaml
 validate:
-  - check: "Mọi file .agent/ đã có nội dung"
-  - check: "Structure khớp với interview"
-  - check: "Task list cover toàn bộ files"
-  - check: "STATE.md đã chuyển phase"
+  .agent/:
+    - check: "00_MASTER.md: Vai trò, constraints"
+    - check: "01_STRUCTURE.md: Cấu trúc đầy đủ"
+    - check: "02_TASK_LIST.md: Tasks rõ ràng"
+    - check: "05_RULES_{LANG}.md: Rules hợp lệ"
+    - check: "STATE.md: Phase = planning"
+    
+  .skill/:
+    - check: "{lang}.md: Kế thừa _shared.md, có language rules"
+    
+  .test/:
+    - check: "scenarios/: Mỗi task có ít nhất 1 test file"
+    - check: "Test format: Given/When/Then đúng chuẩn"
+    
+  .map/:
+    - check: "current/: component_tree.yaml, data_flow.mmd"
+    - check: "diff/: Initialized (.gitkeep)"
+    - check: "refs/: Initialized (.gitkeep)"
+    
+  .doc/:
+    - check: "PROGRESS.md: Dashboard với tasks từ 02_TASK_LIST.md"
+    - check: "DECISION_LOG.md: Template sẵn sàng"
+    
+  cross_reference:
+    - check: "Task list trong 02_TASK_LIST.md khớp với scenarios trong .test/"
+    - check: "Components trong 01_STRUCTURE.md khớp với component_tree.yaml"
 ```
 
 ---
+
+## Step 5: Token Logging
+
+```yaml
+step_5_token_log:
+  name: " BẮT BUỘC: Log Token Usage"
+  action: "Ghi token sau mỗi câu hỏi"
+  output: ".token/interview/INTERVIEW_LOG.yaml"
+  format:
+    entry_id: "Q1-Tier0"  # {question_num}-Tier{tier_num}
+    timestamp: "ISO-8601"
+    tier: 0
+    question_num: 1
+    question_text: "Tóm tắt"
+    answer_summary: "Tóm tắt câu trả lời"
+    tokens:
+      prompt_tokens: 350      # Context + question
+      response_tokens: 200    # User answer
+      total_tokens: 550
+      cumulative: 550       # Running total
+    budget:
+      remaining: 14450
+      percentage_used: 3.7%
+    file_path: ".token/interview/INTERVIEW_LOG.yaml"
+  fail_action: "KHÔNG ĐƯỢC TIẾP TỤC nếu chưa log token"
+```
+
+## Step 6: Checkpoint
+
+```yaml
+step_6_checkpoint:
+  name: "Lưu Checkpoint"
+  action: "Ghi INTERVIEW_OUTPUT.yaml sau mỗi tier"
+  if: "tier hoàn thành"
+```
 
 *Quy trình này tự động chạy sau khi INTERVIEW_OUTPUT.yaml hoàn thành.*

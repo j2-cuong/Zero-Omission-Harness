@@ -191,9 +191,13 @@ Tier xong? → Chuyển tier tiếp hoặc DONE
     ├── Sinh 00_MASTER.md
     ├── Sinh 01_STRUCTURE.md
     ├── Sinh 02_TASK_LIST.md
+    ├── Sinh .test/scenarios/ (từ task list)
+    ├── Sinh .skill/{lang}.md (nếu chưa có)
     ├── Sinh Contracts (N/A nếu không cần)
     ├── Sinh 05_RULES_{LANG}.md
     ├── Sinh 06_BUILD_CONFIG.md
+    ├── Khởi tạo .map/current/, .map/diff/, .map/refs/
+    ├── Khởi tạo .doc/PROGRESS.md, .doc/DECISION_LOG.md
     └── Cập nhật STATE.md (phase = planning)
     │
     ▼
@@ -239,31 +243,100 @@ auto_generate_workflow:
     create: "Task list với dependency"
     output: ".agent/02_TASK_LIST.md"
   
-  step_5_generate_contracts:
+  step_5_generate_tests:
+    from: "02_TASK_LIST.md"
+    create: "Test scenarios cho mỗi task"
+    output: ".test/scenarios/T{n}_{task_name}.md"
+    format:
+      - "Given/When/Then scenarios"
+      - "Unit test cases"
+      - "Integration test flows"
+      - "Edge cases"
+    mandatory: true
+    fail_action: "KHÔNG ĐƯỢC CHUYỂN SANG CODING NẾU THIẾU .test/"
+
+  step_6_generate_skill:
+    from: "technology.frameworks.primary"
+    detect_language: "react|cpp|csharp|python|go|rust|..."
+    check_existing: ".skill/{lang}.md đã tồn tại?"
+    if_not_exists:
+      action: "Tạo mới .skill/{lang}.md"
+      template: "Kế thừa _shared.md + language specific rules"
+      sections:
+        - "Vai trò, Input, Output, Rule"
+        - "Kế thừa _shared.md"
+        - "Language specific rules (syntax, patterns, anti-patterns)"
+        - "Examples"
+    output: ".skill/{lang}.md"
+
+  step_7_generate_rules_agent:
+    from: ".skill/{lang}.md" + "INTERVIEW_OUTPUT.yaml constraints"
+    create: "Project-specific rules"
+    output: ".agent/05_RULES_{LANG}.md"
+
+  step_8_generate_contracts:
     condition: "IF contracts.external_api != none"
     files: ["03_API_CONTRACT.md", "03_IPC_CONTRACT.md", "04_PINVOKE_CONTRACT.md"]
     else: "Đánh dấu N/A"
-  
-  step_6_generate_rules:
-    from: "technology.frameworks.primary"
-    template: ".skill/{lang}.md"
-    add: "Project-specific overrides"
-    output: ".agent/05_RULES_{LANG}.md"
-  
-  step_7_generate_build_config:
+
+  step_9_generate_build_config:
     from: "technology.build_deploy"
     create: "Build configuration"
     output: ".agent/06_BUILD_CONFIG.md"
   
-  step_8_update_state:
+  step_10_init_map:
+    name: "Khởi tạo .map/ structure"
+    create:
+      - ".map/current/component_tree.yaml"
+      - ".map/current/data_flow.mmd"
+      - ".map/diff/.gitkeep"
+      - ".map/refs/.gitkeep"
+    from: "architecture.components + architecture.data_flow"
+
+  step_11_init_doc:
+    name: "Khởi tạo .doc/ structure"
+    create:
+      - ".doc/PROGRESS.md (dashboard từ task list)"
+      - ".doc/DECISION_LOG.md (template)"
+      - ".doc/ARCH_FLOW.md (nếu cần)"
+
+  step_12_update_state:
     update: ".agent/STATE.md"
     set:
       phase: "planning"
       current_task: "Review .agent/ files"
       next_action: "Approve and start coding"
       last_action: "Auto-generated .agent/ from INTERVIEW_OUTPUT.yaml"
+      
+  step_13_token_log:
+    name: "🔴 BẮT BUỘC: Log token tổng kết interview"
+    action: "Ghi tổng token usage cho toàn bộ interview"
+    output: ".token/interview/INTERVIEW_LOG.yaml"
+    mandatory: true
+    fail_action: "KHÔNG ĐƯỢC CHUYỂN SANG PHASE PLANNING"
+    format:
+      phase: "interview"
+      timestamp_start: "ISO-8601"
+      timestamp_end: "ISO-8601"
+      tiers_completed: [0, 1, 2, 3, 4, 5, 6]
+      total_questions: 29
+      tokens:
+        total: 14500
+        by_tier:
+          tier_0: 2000
+          tier_1: 2500
+          tier_2: 1500
+          tier_3: 1500
+          tier_4: 3000
+          tier_5: 2500
+          tier_6: 2000
+      budget:
+        allocated: 15000
+        used: 14500
+        remaining: 500
+        percentage: 96.7%
   
-  notify_user: "✅ .agent/ đã tự động tạo xong. Sẵn sàng review."
+  notify_user: "✅ .agent/ đã tự động tạo xong. Token logged. Sẵn sàng review."
 ```
 
 ---
@@ -309,6 +382,11 @@ interview:
 - `.agent/00_MASTER.md`
 - `.agent/01_STRUCTURE.md`
 - `.agent/02_TASK_LIST.md` (skeleton)
+- `.test/scenarios/T{n}_{name}.md` (cho mỗi task)
+- `.skill/{lang}.md` (nếu chưa có)
+- `.map/current/` (component_tree, data_flow)
+- `.map/diff/`, `.map/refs/` (initialized)
+- `.doc/PROGRESS.md`, `.doc/DECISION_LOG.md`
 - `.agent/STATE.md` (phase = planning)
 
 **KHÔNG cần user intervention** — AI tự động chạy.

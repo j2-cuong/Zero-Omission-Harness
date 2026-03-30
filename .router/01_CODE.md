@@ -112,6 +112,12 @@ gate_3_post_code:
       
     - name: "Test Alignment"
       verify: "Code có thể pass .test/scenarios/T{n}.md"
+      
+    - name: "Doc & Map Update Check"
+      verify: ".doc/PROGRESS.md cập nhật progress task"
+      verify: ".map/current/ cập nhật nếu có thay đổi structure"
+      verify: ".map/diff/ tạo version diff nếu breaking change"
+      fail_action: "Cập nhật doc/map trước khi đánh dấu done"
 ```
 
 ---
@@ -148,28 +154,144 @@ gate_3_post_code:
 
 ---
 
-## Post-Code Actions
+## Post-Code Actions (BẮT BUỘC)
 
-Sau khi code xong, AI phải:
+Sau khi code xong, AI phải thực hiện:
 
+### 1. Update Documentation
 ```yaml
-post_code_actions:
-  - update: ".agent/STATE.md"
-    fields: ["current_task", "last_action", "last_actor", "consistency_flags"]
-  - append: ".agent/DECISION_LOG.md"
-    if: "có quyết định kiến trúc"
-  - update_map:
-      if: "thay đổi component/function/data flow"
-      strategy: "incremental"  # Chỉ update phần thay đổi
-      files:
-        - ".map/current/component_tree.yaml"  # Nếu thêm/xóa component
-        - ".map/current/callgraph_{comp}.txt"   # Nếu thay đổi functions
-        - ".map/current/data_flow.mmd"          # Nếu thay đổi luồng
-  - create_ref:
-      if: "task có linked map nodes"
-      file: ".map/refs/TASK-{id}.yaml"
-  - trigger: "consistency_check"
-    verify: ["doc", "map", "test", "contract"]
+update_doc:
+  file: ".doc/PROGRESS.md"
+  action: "append"
+  content:
+    - task_id: "T{n}"
+    - status: "completed"
+    - timestamp: "YYYY-MM-DD HH:MM"
+    - actor: "[AI-ID]"
+    - files_modified: ["list files đã đổi"]
+    - breaking_change: true/false
+    - map_updated: true/false
+```
+
+### 2. Update Map Files (Incremental)
+```yaml
+update_map:
+  strategy: "incremental"
+  
+  if_new_component:
+    file: ".map/current/component_tree.yaml"
+    action: "append node"
+    
+  if_new_function:
+    file: ".map/current/callgraph_{comp}.txt"
+    action: "append function signature"
+    
+  if_data_flow_change:
+    file: ".map/current/data_flow.mmd"
+    action: "update mermaid diagram"
+    
+  create_ref:
+    if: "task có linked map nodes"
+    file: ".map/refs/TASK-{id}.yaml"
+    content:
+      task_id: "T{n}"
+      map_nodes: ["list nodes"]
+      timestamp: "YYYY-MM-DD HH:MM"
+```
+
+### 3. Create Diff Version (Nếu Breaking Change)
+```yaml
+create_diff:
+  condition: "breaking_change OR major refactor"
+  
+  steps:
+    1: "Xác định version trước và sau"
+    2: "So sánh diff giữa các file thay đổi"
+    3: "Ghi vào .map/diff/"
+    
+  output:
+    file: ".map/diff/v{old}_to_v{new}.yaml"
+    content:
+      old_version: "x.y.z"
+      new_version: "x.y.z"
+      timestamp: "YYYY-MM-DD HH:MM"
+      changed_files:
+        - file: "path"
+          change_type: "add|modify|delete"
+          impact: "api|internal|docs"
+      breaking_changes:
+        - description: "what changed"
+          migration: "how to migrate"
+      affected_contracts: ["list if any"]
+```
+
+### 4. Update State
+```yaml
+update_state:
+  file: ".agent/STATE.md"
+  fields:
+    - "current_task"
+    - "last_action"
+    - "last_actor"
+    - "consistency_flags.code_map = true"
+    - "consistency_flags.map_doc = true"
+    - "version: nếu có breaking change"
+```
+
+### 5. Trigger Consistency Check
+```yaml
+consistency_check:
+  verify:
+    - "code_vs_map: Code changes reflected in map"
+    - "map_vs_doc: Map updates documented"
+    - "task_vs_progress: Task marked complete in PROGRESS.md"
+    - "ref_created: TASK-{id}.yaml exists if needed"
+    - "diff_created: Version diff exists if breaking change"
+    - "token_logged: Token usage recorded in .token/coding/"
+```
+
+### 6. Token Logging (BẮT BUỘC)
+```yaml
+token_log:
+  file: ".token/coding/TASK_{id}.yaml"
+  mandatory: true
+  fail_action: "KHÔNG ĐƯỢC ĐÁNH DẤU TASK COMPLETE"
+  
+  content:
+    task_id: "T{n}"
+    timestamp_start: "ISO-8601"
+    timestamp_end: "ISO-8601"
+    actor: "[AI-ID]"
+    
+    phases:
+      - name: "pre_code"
+        tokens: 500
+        action: "Load context + validation"
+        
+      - name: "code_generation"
+        tokens: 2000
+        action: "Write implementation"
+        
+      - name: "validation"
+        tokens: 300
+        action: "Run 3 gates"
+        
+      - name: "map_update"
+        tokens: 400
+        action: "Update .map/current/"
+        
+      - name: "doc_update"
+        tokens: 200
+        action: "Update PROGRESS.md"
+        
+    total_tokens: 3400
+    files_modified: 3
+    
+    budget:
+      allocated: 5000
+      used: 3400
+      remaining: 1600
+      percentage: 68%
 ```
 
 ---
