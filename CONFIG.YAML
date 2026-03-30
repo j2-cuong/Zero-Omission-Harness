@@ -3,6 +3,11 @@
 # CONSISTENCY VALIDATOR CONFIGURATION - WEIGHTED SCORING
 # ===========================================================
 
+# Mode hoạt động: light | strict
+# - light: Bỏ qua một số validation không quan trọng, thích hợp prototype
+# - strict: Tất cả validation gates đều bắt buộc, production-ready
+mode: light
+
 # Weighted scoring - advisory only, not hard gate initially
 scoring:
   enabled: true
@@ -13,15 +18,15 @@ scoring:
     doc_reality: 15        # Reference only
   threshold_warning: 70
   threshold_block: 50      # Only block if very low
-  
+
 # Validators priority
 validators:
   priority_1:
-    - code_contract        # ✅ Build first
-    - state_transition     # ✅ Build second
+    - code_contract        # Build first
+    - state_transition     # Build second
   priority_2:
-    - map_code             # ⚠️ Simple grep-based
-    - doc_reality          # ⚠️ Simple grep-based
+    - map_code             # Simple grep-based
+    - doc_reality          # Simple grep-based
 
 # Thresholds - conservative initially
 thresholds:
@@ -33,21 +38,30 @@ thresholds:
 # Auto-fix - VERY CONSERVATIVE
 auto_fix:
   enabled: true
-  safe_fixes_only: true       # ✅ Only safe drifts
+  safe_fixes_only: true       # Only safe drifts
+  require_approval: true      # true: cần user gõ APPROVED
+  dry_run_first: true         # Luôn tạo dry-run trước
+
   allowed_fixes:
     - map_file_sync           # Safe: add missing file to map
     - doc_timestamp_update    # Safe: update timestamp
     - hash_cache_refresh      # Safe: refresh cache
+
+  # Các fix type không cần approval (chỉ áp dụng trong light mode)
+  light_mode_auto_fix:
+    - hash_cache_refresh
+    - timestamp
+
   NOT_allowed_fixes:
-    - contract_code_match     # ❌ Never auto-fix contract-code drift
-    - doc_content_sync        # ❌ Never auto-fix doc content
-  
+    - contract_code_match     # Never auto-fix contract-code drift
+    - doc_content_sync        # Never auto-fix doc content
+
 # Blocking rules - conservative initially
 blocking:
   on_critical: true
   on_error: true
   on_warning: false           # Don't block on warning initially
-  use_score_as_gate: false    # ✅ Score is advisory only
+  use_score_as_gate: false    # Score is advisory only
 
 # Paths
 paths:
@@ -81,8 +95,70 @@ checkpoint:
 
 # Lock integration
 lock:
+  enabled: true
+  mode: local                 # local hoặc distributed
+  heartbeat_interval: 300     # seconds (5 minutes)
+  timeout_hours: 2
+  auto_release_on_exit: true
   require_lock_for_validation: false
   auto_release_after_validation: true
+
+# Token management
+token:
+  management: manual          # manual hoặc ide_based
+  alert_at: 80                # Alert khi đạt 80% budget
+  budget_file: ".token/budget.yaml"
+  log_dir: ".token/logs"
+
+  phases:
+    interview:
+      budget: 50000
+      critical: false
+    planning:
+      budget: 30000
+      critical: false
+    coding:
+      budget: 100000
+      critical: true
+    testing:
+      budget: 40000
+      critical: true
+    bugfix:
+      budget: 50000
+      critical: true
+    release:
+      budget: 10000
+      critical: false
+
+# State machine configuration
+state:
+  transition_cli_only: true    # true: AI không được sửa STATE.md trực tiếp
+  state_file: ".state/STATE.md"
+  state_machine: ".state/STATE_MACHINE.yaml"
+  history_dir: ".state/history"
+  auto_checkpoint: true        # Auto checkpoint trước mỗi transition
+
+  # Guards evaluation
+  guards:
+    file_exists: true
+    task_list_complete: true
+    validation_gate_passed: true
+    no_active_lock: true
+
+# CLI configuration
+cli:
+  name: "zoh"
+  version: "1.0.0"
+
+  # Output formatting
+  output:
+    format: "rich"            # rich hoặc plain
+    color: true
+    verbose: false
+
+  # Logging
+  log_level: "INFO"         # DEBUG, INFO, WARNING, ERROR
+  log_file: ".agent/consistency/cli.log"
 
 # Notifications
 notifications:

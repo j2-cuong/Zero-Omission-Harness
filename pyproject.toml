@@ -1,0 +1,102 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zero-omission-harness"
+version = "1.0.0"
+description = "AI-driven software development framework with consistency validation"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "ZOH Team", email = "zoh@example.com"}
+]
+keywords = ["ai", "development", "framework", "consistency", "validation"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "pyyaml>=6.0",
+    "jsonschema>=4.0.0",
+    "pathspec>=0.11.0",
+]
+
+[project.optional-dependencies]
+cli = [
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "click>=8.0.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+]
+all = [
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "click>=8.0.0",
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+]
+
+[project.scripts]
+zoh = "zoh.cli:cli_main"
+
+[project.urls]
+Homepage = "https://github.com/j2-cuong/zero-omission-harness"
+Documentation = "https://github.com/j2-cuong/zero-omission-harness/blob/main/README.md"
+Repository = "https://github.com/j2-cuong/zero-omission-harness"
+Issues = "https://github.com/j2-cuong/zero-omission-harness/issues"
+
+[tool.setuptools]
+packages = ["zoh", "zoh.core", "zoh.validators"]
+
+[tool.setuptools.package-dir]
+zoh = "zoh"
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"

@@ -1,10 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-=============================================================================
-LOCK MANAGER - Simple File-Based Lock với Timeout + Heartbeat
-Không cần distributed lock cho single-machine
-=============================================================================
+ZOH Lock Manager
 """
 
 import os
@@ -49,13 +44,11 @@ class LockManager:
                 # Check if expired
                 expires_at = datetime.fromisoformat(lock_data['expires_at'])
                 if datetime.utcnow() > expires_at:
-                    # Lock expired, can take over
                     print(f"⚠️  Previous lock expired (owner: {lock_data.get('owner', 'unknown')})")
                     return self._write_lock(phase, timeout_hours)
                 
                 # Check if same owner
                 if lock_data.get('owner') == self.session_id:
-                    # Already have lock, just refresh
                     return self.heartbeat()
                 
                 # Lock held by another session
@@ -63,7 +56,6 @@ class LockManager:
                 return False
                 
             except (json.JSONDecodeError, KeyError) as e:
-                # Corrupted lock file, take over
                 print(f"⚠️  Corrupted lock file, taking over")
                 return self._write_lock(phase, timeout_hours)
         else:
@@ -99,8 +91,6 @@ class LockManager:
             if lock_data.get('owner') == self.session_id:
                 self.lock_file.unlink()
                 print(f"✅ Lock released: {self.session_id}")
-                
-                # Create audit entry
                 self._create_audit_entry('lock_release', {'phase': lock_data.get('phase')})
                 return True
             else:
@@ -122,7 +112,6 @@ class LockManager:
             
             if lock_data.get('owner') == self.session_id:
                 lock_data['last_heartbeat'] = datetime.utcnow().isoformat()
-                # Extend expiry
                 lock_data['expires_at'] = (datetime.utcnow() + timedelta(hours=self.default_timeout_hours)).isoformat()
                 
                 with open(self.lock_file, 'w', encoding='utf-8') as f:
@@ -154,7 +143,6 @@ class LockManager:
         
         expires_at = datetime.fromisoformat(status['expires_at'])
         if datetime.utcnow() > expires_at:
-            # Expired
             return False
         
         return True
@@ -188,7 +176,6 @@ class LockManager:
 
 
 # Auto-run interface
-
 def acquire_lock(phase: str, timeout_hours: int = 2) -> bool:
     """Acquire lock - được gọi tự động bởi workflow"""
     manager = LockManager()
@@ -199,7 +186,7 @@ def release_lock() -> bool:
     manager = LockManager()
     return manager.release()
 
-def check_lock_status() -> dict:
+def check_lock_status() -> Optional[dict]:
     """Check lock status"""
     manager = LockManager()
     return manager.status()

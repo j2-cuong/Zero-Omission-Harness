@@ -335,3 +335,59 @@ bug_status_flow:
 ---
 
 *Mỗi bug fix là 1 vòng lặp hoàn chỉnh với simulation, fix, validation, và logging.*
+
+---
+
+## 🔴 HARD RULES - BẮT BUỘC SỬ DỤNG CLI
+
+### Rule 1: Validation Gate (REQUIRED)
+
+```markdown
+## ⚠️ BẮT BUỘC: Validation Gate
+
+Sau khi fix bug, AI PHẢI chạy:
+```bash
+zoh validate
+```
+
+**Nếu output có overall_status: FAIL → AI phải sửa lỗi và chạy lại cho đến khi PASS**
+
+**Không được chuyển phase nếu validation FAIL!**
+```
+
+### Rule 2: State Transition (REQUIRED)
+
+```markdown
+## ⚠️ BẮT BUỘC: State Transition
+
+AI KHÔNG ĐƯỢC sửa `.state/STATE.md` trực tiếp!
+
+Để chuyển phase, AI PHẢI chạy:
+```bash
+zoh transition <phase>
+```
+
+Ví dụ:
+```bash
+zoh transition testing
+```
+
+**Hậu quả nếu vi phạm:** 
+- Transition không được audit log
+- Các guards không được evaluate
+- Checkpoint không được tạo
+- Hệ thống coi là INVALID
+```
+
+### Rule 3: Auto-fix Approval (REQUIRED)
+
+```markdown
+## ⚠️ BẮT BUỘC: Auto-fix Approval
+
+Khi phát hiện drift nhỏ (map, timestamp):
+1. AI chạy dry-run: `zoh apply-fix --id <drift_id> --dry-run`
+2. AI trình bày và hỏi user: "Reply APPROVED to continue"
+3. Khi user reply APPROVED, AI chạy: `zoh apply-fix --id <drift_id> --yes`
+
+**Cấm AI tự ý sửa file khi chưa có approval!**
+```

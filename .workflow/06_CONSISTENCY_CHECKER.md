@@ -278,3 +278,54 @@ state_integration:
 ---
 
 *Consistency checker đảm bảo mọi file đồng bộ trước khi chuyển phase.*
+
+---
+
+## 🔴 HARD RULES - BẮT BUỘC
+
+### Rule 1: AI Không Được Sửa STATE.md Trực Tiếp
+
+```markdown
+## 🚫 CẤM: Sửa STATE.md bằng tay
+
+AI KHÔNG ĐƯỢC:
+- Edit file `.state/STATE.md` trực tiếp
+- Dùng tools edit để thay đổi phase
+- Bypass state machine logic
+
+AI PHẢI:
+- Dùng CLI: `zoh transition <phase>`
+
+**Vi phạm = Transition INVALID, không được audit log**
+```
+
+### Rule 2: Validation Phải Pass Trước Khi Chuyển Phase
+
+```markdown
+## ⚠️ BẮT BUỘC: Validation Pass
+
+Trước khi chuyển phase, AI PHẢI:
+1. Chạy: `zoh validate`
+2. Kiểm tra output: `overall_status`
+3. Nếu FAIL → sửa lỗi → chạy lại
+4. Nếu PASS → được phép chuyển phase
+
+**Không được bỏ qua validation!**
+```
+
+### Rule 3: Sử Dụng CLI Cho Mọi Thao Tác
+
+```markdown
+## ⚠️ BẮT BUỘC: CLI Usage
+
+| Thao tác | Lệnh CLI |
+|----------|----------|
+| Chuyển phase | `zoh transition <phase>` |
+| Validation | `zoh validate` |
+| Fix drift | `zoh apply-fix --id <id> [--yes]` |
+| Complete task | `zoh task complete <id>` |
+| Check status | `zoh status` |
+| Create checkpoint | `zoh checkpoint create` |
+
+**Không dùng edit tools cho các thao tác này!**
+```

@@ -1,202 +1,296 @@
-# AI Agent Base
-> **Operating System for AI-Assisted Development** — Multi-language, multi-AI, resumable at any point.
+# Zero-Omission-Harness (ZOH)
 
-AI Agent Base là **hệ điều hành cho phát triển phần mềm có hỗ trợ AI**. Thay vì AI nhận spec tĩnh rồi code, hệ thống này thiết lập một quy trình chặt chẽ buộc AI phải:
+[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Mode](https://img.shields.io/badge/Mode-Light%20%7C%20Strict-yellow.svg)](CONFIG.yaml)
 
-- **Phỏng vấn** người dùng qua 7 tiers trước khi code
-- **Duy trì trạng thái** liên tục — có thể dừng và resume bất kỳ lúc nào
-- **Simulate** mọi thay đổi trước khi apply
-- **Kiểm tra tính nhất quán** giữa code, doc, map, contract
-- **Track token usage** cho mọi tương tác
+> **AI-driven software development framework** with state machine, consistency validation, and drift detection.
 
 ---
 
-## � Quick Start
+## TL;DR
+
+**Zero-Omission-Harness** is an operating system for AI-assisted software development. Instead of AI receiving a static spec and then coding, ZOH establishes a strict workflow with:
+
+- **State Machine** - Clear phases (interview → planning → coding → testing → release)
+- **Validation Gates** - Check before phase transition
+- **Consistency Check** - Code, Map, Doc always in sync
+- **Token Budget** - Manage AI costs
+- **Audit Trail** - Every change is logged
+
+**Light Mode** lets you get started in just 10 minutes.
+
+---
+
+## Quick Start (Light Mode)
+
+### 1. Clone & Install (2 minutes)
 
 ```bash
-# 1. Clone hoặc copy template này vào dự án mới
-cp -r ai-agent-base/ my-new-project/
+git clone <repo-url>
+cd Zero-Omission-Harness
+pip install -e ".[cli]"
+```
 
-# 2. Bắt đầu với interview — AI sẽ hỏi bạn qua 7 tiers
-# Tier 0-6: Từ thông tin cơ bản đến xử lý lỗi
+### 2. Initialize (3 minutes)
 
-# 3. Sau interview, AI tự động sinh:
-#    - .agent/ (specs cho AI)
-#    - .skill/ (language rules)
-#    - .test/ (test scenarios)
-#    - .map/ (architecture)
+```bash
+# Check system
+zoh check-consistency
 
-# 4. Review và approve → Bắt đầu coding
+# View current status
+zoh status
+```
 
-# 5. Code → Test → Bugfix → Release (tự động)
+### 3. Start Interview (5 minutes)
+
+```bash
+# Switch to interview phase
+zoh transition interview
+
+# After interview, switch to planning
+zoh transition planning
+```
+
+Done! See [ONBOARDING.md](ONBOARDING.md) for more details.
+
+---
+
+## Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **State Machine** | Clear phases with allowed transitions and guards |
+| **Validation Gates** | Automated checks before each phase transition |
+| **Consistency Check** | Code ↔ Map ↔ Doc always in sync |
+| **Auto-fix** | Automatic fix for small issues (with approval) |
+| **Checkpoint** | Backup before major changes |
+| **Lock** | Prevent conflicts when multiple AIs work together |
+| **Token Budget** | Cost management per phase |
+
+---
+
+## ZOH CLI
+
+### Installation
+
+```bash
+# Install with full CLI
+pip install -e ".[cli]"
+
+# Or install basic version
+pip install -e .
+```
+
+### Main Commands
+
+```bash
+# Validation
+zoh validate                    # Run validation
+zoh validate --verbose          # More details
+zoh check-consistency           # Quick check
+
+# State Management
+zoh status                      # View status
+zoh transition <phase>          # Switch phase
+zoh transition coding           # Example: switch to coding
+
+# Task Management
+zoh task list                   # List tasks
+zoh task complete <id>          # Mark as complete
+
+# Checkpoint
+zoh checkpoint create           # Create checkpoint
+zoh checkpoint list             # List checkpoints
+zoh checkpoint rollback --id <id>  # Rollback
+
+# Auto-fix
+zoh apply-fix --id <drift_id> --dry-run   # Preview
+zoh apply-fix --id <drift_id> --yes       # Apply fix
 ```
 
 ---
 
-## 📁 Directory Structure
+## Light Mode vs Strict Mode
 
-```
-project/
-├── .router/          # Điều phối — AI đọc đầu tiên
-│   ├── ROUTER.md     # Main router
-│   └── 0X_*.md       # Phase routers (interview, code, bugfix...)
-│
-├── .workflow/        # Workflows
-│   ├── 00_MASTER_WORKFLOW.md    # Orchestrator chính
-│   ├── 02_GENERATE_AGENT.md     # Sinh specs từ interview
-│   ├── 03_SCAN_FOR_BUGS.md      # Quét bug
-│   ├── 04_BUGFIX_LOOP.md        # Fix bugs với simulation
-│   └── 0X_*.md                  # Các workflows khác
-│
-├── .skill/           # Language rules (bất biến)
-│   ├── _shared.md    # Rules chung
-│   └── {lang}.md   # Rules từng ngôn ngữ
-│
-├── .agent/           # Project specs (sinh động)
-│   ├── STATE.md      # State engine — driver của toàn hệ thống
-│   ├── 00_MASTER.md  # Vai trò AI, constraints
-│   ├── 01_STRUCTURE.md
-│   ├── 02_TASK_LIST.md
-│   └── 0X_*.md       # Contracts, rules, build config
-│
-├── .sim/             # Simulations trước khi fix
-│   └── dry_run_*.md  # Impact boundary control
-│
-├── .map/             # Architecture maps
-│   ├── current/      # Current state
-│   ├── diff/         # Version diffs
-│   └── refs/         # Task/bug references
-│
-├── .test/            # Test scenarios
-│   └── scenarios/    # Mỗi task có test tương ứng
-│
-├── .doc/             # Documentation
-│   ├── PROGRESS.md   # Dashboard tiến độ
-│   ├── DECISION_LOG.md  # Multi-AI coordination
-│   └── GUIDE.md      # Hướng dẫn chi tiết (file này)
-│
-├── .bug/             # Bug tracking (tạo sau khi code)
-│   ├── 01_SCAN_LOG.md
-│   └── 02_BUG_LIST.md
-│
-└── .token/           # Token tracking
-    ├── interview/
-    ├── coding/
-    └── bugfix/
+### Light Mode (Prototype)
+
+```yaml
+# CONFIG.yaml
+mode: light
+
+auto_fix:
+  require_approval: false    # Auto-fix without approval
 ```
 
-| Thư mục | Mục đích | Khi nào tạo |
-|---------|----------|-------------|
-| `.router/` | Điều phối AI, lazy loading | Template |
-| `.workflow/` | Interview, generate, scan, fix workflows | Template |
-| `.skill/` | Language rules (C++, C#, React...) | Template + Auto-gen |
-| `.agent/` | Project specs, state engine | Auto-gen sau interview |
-| `.sim/` | Simulation trước fix | Khi fix bug |
-| `.map/` | Architecture maps | Auto-gen sau interview |
-| `.test/` | Test scenarios | Auto-gen sau interview |
-| `.doc/` | Docs, progress, decisions | Auto-gen + Update liên tục |
-| `.bug/` | Bug tracking | Tạo sau khi code xong |
-| `.token/` | Token usage logs | Tạo khi bắt đầu |
+- Skip some non-critical validations
+- Auto-fix without approval
+- Token budget not enforced
+- **Use for:** Prototypes, experiments, small projects (< 1 week)
 
----
+### Strict Mode (Production)
 
-## 🔧 How It Works
+```yaml
+# CONFIG.yaml
+mode: strict
 
-### Phase 1: Interview (7 Tiers)
-AI hỏi bạn qua 7 tiers từ cơ bản đến chi tiết. Sau mỗi tier, lưu checkpoint.
-
-### Phase 2: Auto-Generate
-Từ kết quả interview, AI tự động sinh toàn bộ specs:
-- `.agent/` — Project configuration
-- `.skill/` — Language-specific rules
-- `.test/` — Test scenarios
-- `.map/` — Architecture diagrams
-
-### Phase 3: User Approval
-Bạn review và approve specs trước khi code bắt đầu.
-
-### Phase 4: Coding Loop
-- Code từng task theo specs
-- Validation gates sau mỗi task
-- Auto-update maps và progress
-
-### Phase 5: Bug Scan & Fix
-- Quét bug từ code, maps, docs
-- Mỗi bug phải có reproducible scenario
-- Fix với simulation và impact boundary control
-
-### Phase 6: Test & Release
-- Run tests
-- Update progress
-- Release hoặc quay lại fix
-
----
-
-## 🔒 Hard Gates (Không Thể Bypass)
-
-| Gate | Kiểm tra | Nếu Fail |
-|------|----------|----------|
-| **GATE-1** | Interview hoàn thành? | Không generate specs |
-| **GATE-2** | STATE.md updated sau mỗi step? | Không chạy step tiếp theo |
-| **GATE-3** | Có simulation cho fix? | Không apply fix |
-
----
-
-## � Sign-Off Convention
-
-Mọi thay đổi phải có chữ ký:
-```
-[YYYY-MM-DD HH:MM] [AI-ID] [Action]
+auto_fix:
+  require_approval: true     # Requires user approval
 ```
 
-Ví dụ:
+- All validation gates enforced
+- Auto-fix requires approval
+- Token budget enforced
+- **Use for:** Production, team collaboration, large projects
+
+---
+
+## Directory Structure
+
 ```
-[2026-03-29 10:00] [Claude-3.7] [Create STATE.md phase=interview]
-[2026-03-29 11:30] [Claude-3.7] [Generate .agent/ from interview]
-[2026-03-29 14:00] [Claude-3.7] [Complete task T1: Setup Vite]
+Zero-Omission-Harness/
+├── CONFIG.yaml              # Main configuration ⭐
+├── zoh/                     # Python package (code centralized)
+│   ├── __init__.py
+│   ├── cli.py              # CLI entry point
+│   ├── validator.py        # Main validator
+│   ├── core/               # Core modules
+│   │   ├── config.py       # Config loader
+│   │   ├── state.py        # State validator
+│   │   ├── checkpoint.py   # Checkpoint manager
+│   │   └── lock.py         # Lock manager
+│   └── validators/         # Validation modules
+│       ├── code_contract.py
+│       ├── map_code.py
+│       ├── doc_reality.py
+│       └── state_transition.py
+├── .agent/                  # AI Agent files (data)
+│   ├── 02_TASK_LIST.md     # Task list ⭐
+│   └── contracts/           # API contracts
+├── .state/                  # State management (data)
+│   ├── STATE.md            # Current state ⭐
+│   └── STATE_MACHINE.yaml  # State definitions
+├── .map/                    # Architecture maps (data)
+├── .doc/                    # Documentation (data)
+├── .workflow/               # Workflow definitions
+│   └── *.md                # Process documentation
+├── .router/                 # AI routers
+├── ONBOARDING.md           # 10-minute guide ⭐
+└── README.md               # This file
+```
+
+**Python code is centralized in `zoh/`**, directories `.agent/`, `.state/`, `.map/` contain only data (YAML, MD).
+
+---
+
+## Hard Rules (AI MUST FOLLOW)
+
+### 1. Do Not Edit STATE.md Directly
+
+❌ **Wrong:** Edit `.state/STATE.md` manually  
+✅ **Correct:** `zoh transition <phase>`
+
+### 2. Validation Before Transition
+
+❌ **Wrong:** Switch phase without validation  
+✅ **Correct:**
+```bash
+zoh validate        # Pass
+zoh transition testing
+```
+
+### 3. Task Completion via CLI
+
+❌ **Wrong:** Edit `.agent/02_TASK_LIST.md` directly  
+✅ **Correct:** `zoh task complete T-001`
+
+---
+
+## Workflow
+
+### Interview → Planning → Coding → Testing → Release
+
+```bash
+# Interview
+zoh transition interview
+# ... AI interviews user ...
+
+# Planning
+zoh transition planning
+# ... Generate task list ...
+
+# Coding
+zoh transition coding
+# ... Code implementation ...
+zoh task complete T-001
+
+# Testing
+zoh transition testing
+zoh validate
+
+# Release
+zoh transition release
+```
+
+See details in `.workflow/` directory.
+
+---
+
+## Git Hooks
+
+```bash
+# Install pre-commit hook
+cp .agent/hooks/pre-commit .git/hooks/
+chmod +x .git/hooks/pre-commit
+
+# Hook will run validation before each commit
 ```
 
 ---
 
-## 📖 Documentation
+## CI/CD
 
-- **[GUIDE.md](.doc/GUIDE.md)** — Hướng dẫn chi tiết về cách hệ thống hoạt động
-- **[DECISION_LOG.md](.doc/DECISION_LOG.md)** — Log quyết định kiến trúc (Multi-AI)
-- **[AI_GUIDE.md](.agent/AI_GUIDE.md)** — Hướng dẫn cho AI làm việc trong hệ thống
-
----
-
-## 🎯 Key Features
-
-- ✅ **State Machine** — Mọi phase có allowed transitions
-- ✅ **Lazy Loading** — Chỉ load file cần thiết, tiết kiệm 50-80% token
-- ✅ **Consistency Checker** — Auto-validate code↔map↔doc↔contract
-- ✅ **Impact Boundary Control** — Biết rõ fix ảnh hưởng đến đâu
-- ✅ **Token Tracking** — Log mọi interaction
-- ✅ **Multi-AI Ready** — Nhiều AI có thể collaborate không conflict
-
----
-
-## ⚡ Token Optimization
-
-| Cách cũ | Cách này | Tiết kiệm |
-|---------|----------|-----------|
-| Load full interview (442 dòng) | Router chọn tier (~50-150 dòng) | **70-80%** |
-| Load toàn bộ .agent/ | Chỉ load files liên quan task | **50-60%** |
-| Bugfix load full context | Load minimal (2-3 files) | **60-70%** |
+```yaml
+# .github/workflows/consistency.yml
+name: Consistency Check
+on: [push, pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - run: pip install -r requirements.txt
+      - run: zoh validate --strict
+```
 
 ---
 
-## 🤝 Multi-AI Collaboration
+## Documentation
 
-Khi nhiều AI cùng làm việc:
-
-1. Đọc `STATE.md` trước tiên — biết phase hiện tại
-2. Đọc `DECISION_LOG.md` — không override quyết định cũ
-3. Chỉ bổ sung hoặc flag conflict — không xóa reasoning
-4. Ký tên mọi thay đổi
-5. STATE.md là single source of truth
+| File | Description |
+|------|-------------|
+| [ONBOARDING.md](ONBOARDING.md) | 10-minute guide for newcomers |
+| [GUIDE.md](GUIDE.md) | Detailed architecture documentation |
+| [.agent/AI_GUIDE.md](.agent/AI_GUIDE.md) | Guide for AI working in the system |
+| `.workflow/*.md` | Specific workflows |
 
 ---
 
-*Hệ thống này là bất biến về cấu trúc. Nội dung bên trong mỗi file được sinh động theo từng dự án.*
+## Contributing
+
+1. Fork repository
+2. Create branch: `git checkout -b feature/new-feature`
+3. Commit: `git commit -am 'Add new feature'`
+4. Push: `git push origin feature/new-feature`
+5. Create Pull Request
+
+---
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+*Ready to start? Run `zoh status` to check your system!*
