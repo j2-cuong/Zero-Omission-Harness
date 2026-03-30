@@ -1,0 +1,94 @@
+# .agent/consistency/config.yaml
+# ===========================================================
+# CONSISTENCY VALIDATOR CONFIGURATION - WEIGHTED SCORING
+# ===========================================================
+
+# Weighted scoring - advisory only, not hard gate initially
+scoring:
+  enabled: true
+  weights:
+    code_contract: 40      # Most important
+    state_transition: 30   # Important
+    map_code: 15           # Reference only
+    doc_reality: 15        # Reference only
+  threshold_warning: 70
+  threshold_block: 50      # Only block if very low
+  
+# Validators priority
+validators:
+  priority_1:
+    - code_contract        # ✅ Build first
+    - state_transition     # ✅ Build second
+  priority_2:
+    - map_code             # ⚠️ Simple grep-based
+    - doc_reality          # ⚠️ Simple grep-based
+
+# Thresholds - conservative initially
+thresholds:
+  contract_code_match: 100    # Không chấp nhận sai lệch
+  map_file_sync: 90           # Warning nếu > 10% lệch (relaxed)
+  doc_accuracy: 80            # Warning nếu < 80% coverage (relaxed)
+  state_consistency: 100      # State phải chính xác 100%
+
+# Auto-fix - VERY CONSERVATIVE
+auto_fix:
+  enabled: true
+  safe_fixes_only: true       # ✅ Only safe drifts
+  allowed_fixes:
+    - map_file_sync           # Safe: add missing file to map
+    - doc_timestamp_update    # Safe: update timestamp
+    - hash_cache_refresh      # Safe: refresh cache
+  NOT_allowed_fixes:
+    - contract_code_match     # ❌ Never auto-fix contract-code drift
+    - doc_content_sync        # ❌ Never auto-fix doc content
+  
+# Blocking rules - conservative initially
+blocking:
+  on_critical: true
+  on_error: true
+  on_warning: false           # Don't block on warning initially
+  use_score_as_gate: false    # ✅ Score is advisory only
+
+# Paths
+paths:
+  code:
+    - .cpp
+    - .hpp
+    - .cs
+    - .py
+    - .js
+    - .ts
+    - .go
+    - .java
+    - .rs
+  map:
+    - .map/
+    - ARCHITECTURE.md
+  doc:
+    - .doc/
+    - README.md
+    - docs/
+  contract:
+    - .agent/contracts/
+  state:
+    - .state/STATE.md
+    - .state/STATE_MACHINE.yaml
+
+# Checkpoint integration
+checkpoint:
+  auto_create_before_validation: true
+  auto_rollback_on_critical_fail: true
+
+# Lock integration
+lock:
+  require_lock_for_validation: false
+  auto_release_after_validation: true
+
+# Notifications
+notifications:
+  on_fail: true
+  on_drift_detected: true
+  on_score_below_threshold: true
+  channels:
+    - console
+    - file_report

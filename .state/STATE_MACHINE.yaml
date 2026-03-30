@@ -1,0 +1,162 @@
+# .state/STATE_MACHINE.yaml
+# ===========================================================
+# STATE MACHINE DEFINITION - Machine Readable
+# STATE.md vẫn giữ nguyên cho human-readable
+# ===========================================================
+
+version: "1.0"
+
+states:
+  - name: INIT
+    entry_actions:
+      - validate_repo_structure
+      - create_checkpoint
+    exit_actions: []
+    
+  - name: REQUIREMENT_LOCKED
+    entry_actions:
+      - lock_requirements
+      - create_checkpoint
+    exit_actions:
+      - unlock_if_rollback
+    
+  - name: DESIGN_APPROVED
+    entry_actions:
+      - validate_contracts
+      - create_checkpoint
+    exit_actions: []
+    
+  - name: CODING
+    entry_actions:
+      - acquire_lock
+      - create_checkpoint
+    exit_actions:
+      - run_validation_gates
+      - release_lock
+    
+  - name: TESTING
+    entry_actions:
+      - load_test_suite
+      - create_checkpoint
+    exit_actions:
+      - generate_coverage_report
+    
+  - name: READY_FOR_REVIEW
+    entry_actions:
+      - create_checkpoint
+      - freeze_code
+    exit_actions: []
+    
+  - name: MERGED
+    entry_actions:
+      - create_checkpoint
+      - archive_state
+    exit_actions: []
+
+transitions:
+  - from: INIT
+    to: REQUIREMENT_LOCKED
+    guard: seven_tier_interview_complete
+    actions:
+      - generate_requirement_doc
+      - create_audit_entry
+    
+  - from: REQUIREMENT_LOCKED
+    to: DESIGN_APPROVED
+    guard: design_signoff_complete
+    actions:
+      - finalize_contracts
+      - create_audit_entry
+    
+  - from: DESIGN_APPROVED
+    to: CODING
+    guard: contract_finalized
+    actions:
+      - create_task_list
+      - create_audit_entry
+    
+  - from: CODING
+    to: TESTING
+    guard: validation_gates_passed
+    actions:
+      - update_map
+      - create_audit_entry
+    
+  - from: TESTING
+    to: READY_FOR_REVIEW
+    guard: test_coverage_80_percent
+    actions:
+      - generate_coverage_report
+      - create_audit_entry
+    
+  - from: READY_FOR_REVIEW
+    to: MERGED
+    guard: human_approval
+    actions:
+      - archive_state
+      - create_audit_entry
+
+# Invalid state detection rules
+invalid_state_conditions:
+  - condition: "phase == 'coding' AND NOT exists('.agent/02_TASK_LIST.md')"
+    severity: critical
+    action: halt_and_notify
+    
+  - condition: "phase == 'testing' AND NOT exists('.test/')"
+    severity: critical
+    action: halt_and_notify
+    
+  - condition: "phase == 'release' AND NOT exists('.gates/FINAL_GATE.md')"
+    severity: critical
+    action: halt_and_notify
+    
+  - condition: "lock_expired AND phase IN ['coding', 'testing']"
+    severity: warning
+    action: auto_release_lock
+
+# Recovery actions
+recovery_actions:
+  invalid_state_detected:
+    - create_checkpoint
+    - halt_pipeline
+    - create_recovery_ticket
+    - notify_human
+    
+  lock_timeout:
+    - release_lock
+    - log_audit_entry
+    - notify_human
+    
+  validation_failed:
+    - rollback_to_last_checkpoint
+    - create_blocker_ticket
+    - notify_human
+
+# Checkpoint configuration
+checkpoint:
+  enabled: true
+  frequency: after_each_task
+  retention_count: 10
+  retention_days: 30
+  include_paths:
+    - .agent/
+    - .state/
+  exclude_paths:
+    - .checkpoints/
+    - node_modules/
+    - .git/
+    - __pycache__/
+
+# Audit trail configuration
+audit:
+  enabled: true
+  path: .state/history/
+  max_file_size_kb: 100
+  format: json
+  events:
+    - state_transition
+    - lock_acquire
+    - lock_release
+    - validation_run
+    - checkpoint_created
+    - rollback_executed

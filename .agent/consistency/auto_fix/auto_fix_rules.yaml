@@ -1,0 +1,74 @@
+# ===========================================================
+# AUTO-FIX RULES - Rules để tự động sửa drift nhỏ
+# ===========================================================
+
+# Kích hoạt auto-fix
+enabled: true
+max_drift_percent: 5
+require_confirmation: false  # true = hỏi user trước khi fix
+
+# Rules cho từng loại drift
+fix_rules:
+  # Map file sync issues
+  map_file_missing:
+    enabled: true
+    condition: "drift_percent <= 5%"
+    action: "append_to_map"
+    description: "Thêm file mới vào component_tree.yaml"
+    
+  map_outdated_hash:
+    enabled: true
+    condition: "file_exists_in_map"
+    action: "update_hash_cache"
+    description: "Cập nhật hash cache khi file content thay đổi"
+    
+  orphaned_map_entries:
+    enabled: false  # Cần review manual
+    condition: "file_not_exists"
+    action: "mark_deprecated"
+    description: "Đánh dấu map entry là deprecated thay vì xóa"
+  
+  # Doc sync issues
+  doc_progress_outdated:
+    enabled: true
+    condition: "task_completed_but_doc_pending"
+    action: "sync_from_state"
+    description: "Cập nhật PROGRESS.md từ STATE.md"
+    
+  doc_feature_list_stale:
+    enabled: false  # Không tự động thêm feature mới vào doc
+    condition: "new_feature_detected"
+    action: "suggest_doc_update"
+    description: "Tạo suggestion cho user review"
+  
+  # State consistency
+  state_timestamp_stale:
+    enabled: true
+    condition: "last_update > 24h"
+    action: "update_timestamp"
+    description: "Cập nhật timestamp nếu có thay đổi mới"
+    
+  state_task_alignment:
+    enabled: true
+    condition: "current_task_not_match_progress"
+    action: "sync_task_from_progress"
+    description: "Đồng bộ current_task với last completed task"
+
+# Preserved files (không auto-fix)
+preserved_files:
+  - "STATE.md"  # Chỉ update timestamp, không tự động chuyển phase
+  - "contracts/*.md"  # Không tự động sửa contracts
+  - "DECISION_LOG.md"  # Không tự động thêm decisions
+
+# Rollback config
+rollback:
+  enabled: true
+  backup_before_fix: true
+  backup_location: ".agent/consistency/backups/"
+  max_backups: 10
+  
+# Logging
+logging:
+  log_all_fixes: true
+  log_location: ".agent/consistency/auto_fix.log"
+  format: "timestamp | drift_type | file | action | result"

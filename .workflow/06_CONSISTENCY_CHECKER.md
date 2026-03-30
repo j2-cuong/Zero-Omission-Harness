@@ -117,25 +117,102 @@ check_bug_vs_fix:
 [Trigger: Pre-transition check]
         │
         ▼
-[Load all relevant files]
+[AUTO-RUN] Python import và chạy validation
+        │
+        ├── from .agent.consistency.validator import run_validation
+        ├── report = run_validation()
+        ├── Check drift_threshold.yaml
+        ├── Chạy 5 validators:
+        │   ├── ContractCodeValidator
+        │   ├── MapCodeValidator
+        │   ├── DocRealityValidator
+        │   └── StateTransitionValidator
+        └── Áp dụng auto-fix nếu enabled
         │
         ▼
-[Run 5 consistency checks]
+[Check Results]
         │
-        ├── Code vs Map
-        ├── Map vs Doc
-        ├── Contract vs Impl
-        ├── Task vs Code
-        └── Bug vs Fix
+        ├── Score >= threshold? → Allow transition
+        │   ├── Update consistency_flags
+        │   └── Log PASS
         │
-        ▼
-[Generate Report]
-        │
-        ├── All pass? → Allow transition
-        └── Any fail? → BLOCK transition
+        └── Score < threshold? → BLOCK transition
+            ├── Chạy auto-fix nếu drift < 5%
+            ├── Retry validation
+            └── Nếu vẫn fail: require manual intervention
         │
         ▼
-[Log to .token/consistency/]
+[Log to .agent/consistency/reports/]
+```
+
+### Auto-Validation Integration
+
+```python
+# Cách gọi tự động trong Python workflow
+from .agent.consistency.validator import run_validation
+
+# Chạy validation
+report = run_validation(
+    config_path=".agent/consistency/config.yaml",
+    output_path=".agent/consistency/reports/consistency_{timestamp}.md"
+)
+
+# Kiểm tra kết quả
+if report.overall_status.value == "fail":
+    block_transition()
+else:
+    allow_transition()
+```
+
+```yaml
+auto_validation:
+  trigger:
+    - "pre_phase_transition"
+    - "post_code_commit"
+    - "post_bug_fix"
+    - "manual_request"
+    
+  execution_mode: "automatic_python_call"  # Không dùng CLI
+  
+  python_call: "run_validation(config_path, output_path)"
+  
+  config_files:
+    - ".agent/consistency/config.yaml"
+    - ".agent/consistency/rules/drift_threshold.yaml"
+    - ".agent/consistency/auto_fix/auto_fix_rules.yaml"
+    
+  thresholds:
+    min_score: 80
+    max_critical_failures: 0
+    max_error_failures: 2
+    
+  auto_fix:
+    enabled: true
+    max_drift_percent: 5
+    allowed_fixes:
+      - map_update
+      - doc_sync
+      - hash_cache_refresh
+      
+  on_failure:
+    action: "block_pipeline"
+    create_ticket: true
+    notify: [console, state_update]
+```
+
+### Integration with Validation Gates
+
+```yaml
+gate_integration:
+  gate_4_consistency:
+    tool: "run_validation()"
+    python_module: ".agent/consistency.validator"
+    pass_criteria:
+      - overall_score >= 80
+      - no_critical_failures
+      - no_contract_mismatch
+    retry: 1
+    on_fail: "auto_fix_then_retry"
 ```
 
 ---
