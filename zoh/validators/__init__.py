@@ -5,7 +5,6 @@ from .base import (
     ValidationStatus,
     ValidationResult,
     ConsistencyReport,
-    ConfigLoader,
     BaseValidator
 )
 
@@ -14,6 +13,5 @@ __all__ = [
     'ValidationStatus',
     'ValidationResult',
     'ConsistencyReport',
-    'ConfigLoader',
     'BaseValidator',
 ]

@@ -1,0 +1,64 @@
+# .agent/consistency/config.yaml - REACT PRESET
+mode: light
+
+scoring:
+  enabled: true
+  weights:
+    code_contract: 40
+    state_transition: 30
+    map_code: 15
+    doc_reality: 15
+  threshold_warning: 70
+  threshold_block: 50
+
+validators:
+  priority_1:
+    - code_contract
+    - state_transition
+  priority_2:
+    - map_code
+    - doc_reality
+
+thresholds:
+  contract_code_match: 90
+  map_file_sync: 80
+  doc_accuracy: 70
+  state_consistency: 100
+
+# React-specific patterns
+patterns:
+  react:
+    components:
+      - r'function\s+(?P<name>[A-Z]\w+)'
+      - r'const\s+(?P<name>[A-Z]\w+)\s*=\s*(?:\([^)]*\)|props)\s*=>'
+    hooks:
+      - r'const\s+\[(?P<state>\w+),\s+set\w+\]\s*=\s*useState'
+      - r'useEffect\(\s*\(\s*\)\s*=>'
+
+paths:
+  code:
+    - .jsx
+    - .tsx
+    - .js
+    - .ts
+  map:
+    - .map/
+    - ARCHITECTURE.md
+  doc:
+    - .doc/
+    - README.md
+  contract:
+    - .agent/contracts/
+  state:
+    - .state/STATE.md
+    - .state/STATE_MACHINE.yaml
+
+token:
+  management: manual
+  budget_file: ".token/budget.yaml"
+  phases:
+    interview: {budget: 50000}
+    planning: {budget: 30000}
+    coding: {budget: 100000}
+    testing: {budget: 40000}
+    release: {budget: 10000}

@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from typing import Dict, List, Set
 
-from .base import BaseValidator, ValidationResult, ValidationStatus, Severity
+from zoh.validators.base import BaseValidator, ValidationResult, ValidationStatus, Severity
 
 
 class CodeContractValidator(BaseValidator):
@@ -92,32 +92,68 @@ class CodeContractValidator(BaseValidator):
         return endpoints
     
     def _extract_code_endpoints(self) -> Set[str]:
-        """Extract API endpoints from code files"""
+        """Extract API endpoints from code files using regex or external parsers"""
         endpoints = set()
         
+        # Get custom patterns from config
+        custom_patterns = self.config.get('patterns', {})
+        external_parsers = self.config.get('external_parsers', {})
+        
         for ext in self.code_extensions:
+            # 1. Check if external parser is configured for this extension
+            parser_cmd = external_parsers.get(ext.lstrip('.'))
+            
             for code_file in Path('.').rglob(f'*{ext}'):
+                if 'node_modules' in str(code_file) or '.git' in str(code_file):
+                    continue
+                    
+                # A. Try External Parser first if available
+                if parser_cmd:
+                    try:
+                        import subprocess
+                        import json
+                        result = subprocess.check_output(f"{parser_cmd} {code_file}", shell=True, encoding='utf-8')
+                        data = json.loads(result)
+                        for item in data.get('endpoints', []):
+                            endpoints.add(f"{item.get('method', 'GET').upper()} {item.get('path', '/')}")
+                        continue # If external parser worked, skip regex
+                    except Exception as e:
+                        # Fallback to regex if external parser fails
+                        pass
+
+                # B. Regex Fallback
                 try:
                     with open(code_file, 'r', encoding='utf-8') as f:
                         content = f.read()
                     
-                    # Look for route definitions
-                    # Flask/Django/FastAPI patterns
+                    # Base patterns + Language specific patterns from config
                     patterns = [
-                        r'@(?:app|router)\.route\([\'"](/[^\'"]+)[\'"]\s*,\s*methods=\[[\'"](\w+)[\'"]',
-                        r'@(app\.)?(get|post|put|delete|patch)\([\'"](/[^\'"]+)[\'"]',
-                        r'@router\.(get|post|put|delete|patch)\([\'"](/[^\'"]+)[\'"]',
+                        r'@(?:app|router)\.route\([\'"](?P<path>/[^\'"]+)[\'"]\s*,\s*methods=\[[\'"](?P<method>\w+)[\'"]',
+                        r'@(?:app|router)\.(?P<method>get|post|put|delete|patch)\([\'"](?P<path>/[^\'"]+)[\'"]',
                     ]
                     
+                    # Add patterns from config for this language/extension
+                    lang_key = ext.lstrip('.')
+                    if lang_key in custom_patterns:
+                        patterns.extend(custom_patterns[lang_key].get('endpoints', []))
+                    
                     for pattern in patterns:
-                        matches = re.findall(pattern, content, re.IGNORECASE)
+                        matches = re.finditer(pattern, content, re.IGNORECASE)
                         for match in matches:
-                            if isinstance(match, tuple):
-                                if len(match) == 2:
-                                    method, path = match
-                                    endpoints.add(f"{method.upper()} {path}")
-                                elif len(match) == 3:
-                                    _, method, path = match
+                            try:
+                                # Try named groups first
+                                groups = match.groupdict()
+                                method = groups.get('method', 'GET').upper()
+                                path = groups.get('path', '/')
+                                endpoints.add(f"{method} {path}")
+                            except IndexError:
+                                # Fallback to positional groups if named groups not used
+                                if match.lastindex >= 2:
+                                    method = match.group(1).upper()
+                                    path = match.group(2)
+                                    # Swap if method looks like a path
+                                    if method.startswith('/'):
+                                        method, path = path, method
                                     endpoints.add(f"{method.upper()} {path}")
                 except:
                     pass

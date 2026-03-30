@@ -22,11 +22,11 @@ except ImportError:
     HAS_TYPER = False
 
 # Import ZOH modules
-from .core.config import ConfigLoader
-from .core.state import StateValidator
-from .core.checkpoint import create_checkpoint, rollback_to_checkpoint, list_checkpoints
-from .core.lock import acquire_lock, release_lock, check_lock_status
-from .validator import run_validation, ConsistencyValidator
+from zoh.core.config import ConfigLoader
+from zoh.core.state import StateValidator
+from zoh.core.checkpoint import create_checkpoint, rollback_to_checkpoint, list_checkpoints
+from zoh.core.lock import acquire_lock, release_lock, check_lock_status
+from zoh.validator import run_validation, ConsistencyValidator
 
 
 # Create CLI app
@@ -167,6 +167,52 @@ if HAS_TYPER:
         console.print(f"   [green]✅ Fix {drift_id} applied[/green]")
     
     @app.command()
+    def init(
+        preset: str = Option("default", "--preset", "-p", help="Preset: default, react, dotnet"),
+        mode: str = Option("full", "--mode", "-m", help="Mode: full (all folders), light (only agent/config)"),
+        force: bool = Option(False, "--force", help="Overwrite existing files")
+    ):
+        """Initialize ZOH structure from preset"""
+        import shutil
+        console.print(Panel.fit(f"🏗️ INITIALIZE ZOH: {preset.upper()} (MODE: {mode.upper()})", style="bold green"))
+        
+        template_dir = Path(__file__).parent / "templates" / preset
+        if not template_dir.exists():
+            console.print(f"[red]❌ Preset '{preset}' not found[/red]")
+            console.print("   Available: default, react, dotnet")
+            raise typer.Exit(code=1)
+        
+        # Check if already initialized
+        if Path("CONFIG.yaml").exists() and not force:
+            console.print("[yellow]⚠️  Already initialized. Use --force to overwrite.[/yellow]")
+            raise typer.Exit(code=1)
+            
+        # Define folders allowed for light mode
+        light_allowed = ['.agent', 'CONFIG.YAML', 'CONFIG.yaml']
+            
+        # Copy files
+        try:
+            # Copy contents of template_dir to current directory
+            for item in template_dir.iterdir():
+                if mode == "light" and item.name not in light_allowed:
+                    continue
+                    
+                dest = Path(".") / item.name
+                if item.is_dir():
+                    if dest.exists() and force:
+                        shutil.rmtree(dest)
+                    shutil.copytree(item, dest, dirs_exist_ok=True)
+                else:
+                    shutil.copy2(item, dest)
+            
+            console.print(f"   [green]✅ Initialized from {preset} preset in {mode} mode[/green]")
+            console.print("\nRun [bold]zoh status[/bold] to verify.")
+            
+        except Exception as e:
+            console.print(f"[red]❌ Error: {e}[/red]")
+            raise typer.Exit(code=1)
+
+    @app.command()
     def task(
         action: str = Argument(..., help="Action: complete, list"),
         task_id: Optional[str] = Argument(None, help="Task ID")
@@ -236,6 +282,42 @@ if HAS_TYPER:
             console.print(f"[red]❌ Unknown action: {action}[/red]")
             raise typer.Exit(code=1)
     
+    @app.command()
+    def sim(
+        files: Optional[List[str]] = Argument(None, help="Modified files (defaults to git modified)"),
+        output: Optional[str] = Option(None, "--output", "-o", help="Output path")
+    ):
+        """Run impact analysis (SIMULATION)"""
+        from .core.impact import ImpactAnalyzer
+        from rich.panel import Panel
+        console.print(Panel.fit("🛡️ IMPACT ANALYSIS (SIMULATION)", style="bold blue"))
+        
+        # If no files provided, try to get from git
+        if not files:
+            import subprocess
+            try:
+                git_status = subprocess.check_output(['git', 'status', '--porcelain'], encoding='utf-8')
+                # Filter for modified files
+                files = []
+                for line in git_status.splitlines():
+                    if line.startswith((' M', 'M ')):
+                        files.append(line[3:].strip())
+            except:
+                console.print("[yellow]⚠️  Cannot get git status, please provide files manually[/yellow]")
+                raise typer.Exit(code=1)
+        
+        if not files:
+            console.print("   [green]No modified files detected[/green]")
+            return
+            
+        analyzer = ImpactAnalyzer()
+        console.print("🔍 Scanning project dependency graph...")
+        analyzer.build_graph()
+        
+        report_path = analyzer.generate_report(files, output)
+        console.print(f"   [green]✅ Impact report generated: {report_path}[/green]")
+        console.print(1) # Added placeholder for potential additional logic
+
     @app.command()
     def check_consistency(
         detailed: bool = Option(False, "--detailed", help="Show detailed output"),

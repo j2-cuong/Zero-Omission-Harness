@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from typing import Dict, List
 
-from .base import BaseValidator, ValidationResult, ValidationStatus, Severity
+from zoh.validators.base import BaseValidator, ValidationResult, ValidationStatus, Severity
 
 
 class StateTransitionValidator(BaseValidator):

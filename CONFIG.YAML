@@ -35,6 +35,23 @@ thresholds:
   doc_accuracy: 80            # Warning nếu < 80% coverage (relaxed)
   state_consistency: 100      # State phải chính xác 100%
 
+# Patterns - Dynamic Regex for different languages
+patterns:
+  python:
+    endpoints:
+      - r'@app\.(?P<method>get|post|put|delete|patch)\([\'"](?P<path>/[^\'"]+)[\'"]\)'
+  javascript:
+    endpoints:
+      - r'router\.(?P<method>get|post|put|delete|patch)\([\'"](?P<path>/[^\'"]+)[\'"]\)'
+  cs:
+    endpoints:
+      - r'\[(?P<method>HttpGet|HttpPost|HttpPut|HttpDelete|HttpPatch)\([\'"](?P<path>[^\'"]+)[\'"]\)\]'
+
+# External Parsers Hook - Call CLI scripts for complex parsing
+external_parsers:
+  javascript: "" # Example: "node ./scripts/parse_js.js"
+  cpp: ""        # Example: "python ./scripts/parse_cpp.py"
+
 # Auto-fix - VERY CONSERVATIVE
 auto_fix:
   enabled: true

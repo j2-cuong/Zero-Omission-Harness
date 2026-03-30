@@ -1,0 +1,54 @@
+# .agent/consistency/config.yaml - DOTNET PRESET
+mode: light
+
+scoring:
+  enabled: true
+  weights:
+    code_contract: 50
+    state_transition: 20
+    map_code: 15
+    doc_reality: 15
+  threshold_warning: 75
+
+validators:
+  priority_1:
+    - code_contract
+    - state_transition
+  priority_2:
+    - map_code
+    - doc_reality
+
+thresholds:
+  contract_code_match: 100
+  map_file_sync: 90
+  doc_accuracy: 80
+
+# .NET-specific patterns
+patterns:
+  cs:
+    endpoints:
+      - r'\[(?P<method>HttpGet|HttpPost|HttpPut|HttpDelete|HttpPatch)\([\'"](?P<path>[^\'"]+)[\'"]\)\]'
+      - r'\[Route\([\'"](?P<path>[^\'"]+)[\'"]\)\]'
+    classes:
+      - r'public\s+class\s+(?P<name>\w+)'
+    interfaces:
+      - r'public\s+interface\s+I(?P<name>\w+)'
+
+paths:
+  code:
+    - .cs
+  map:
+    - .map/
+  doc:
+    - .doc/
+  contract:
+    - .agent/contracts/
+  state:
+    - .state/STATE.md
+
+token:
+  management: manual
+  budget_file: ".token/budget.yaml"
+  phases:
+    coding: {budget: 150000}
+    testing: {budget: 50000}

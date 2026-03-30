@@ -32,14 +32,24 @@ cd Zero-Omission-Harness
 pip install -e ".[cli]"
 ```
 
-### 2. Khởi tạo (3 phút)
+### 2. Khởi tạo (1 phút)
 
 ```bash
-# Kiểm tra hệ thống
-zoh check-consistency
+# Khởi tạo từ preset (react, dotnet, default)
+zoh init --preset react --mode light
 
 # Xem trạng thái hiện tại
 zoh status
+```
+
+### 3. Kiểm tra & Mô phỏng
+
+```bash
+# Chạy kiểm tra tính nhất quán
+zoh validate
+
+# Mô phỏng ảnh hưởng của thay đổi (Impact Analysis)
+zoh sim src/utils.ts
 ```
 
 ### 3. Bắt đầu Interview (5 phút)
@@ -85,19 +95,22 @@ pip install -e .
 ### Các lệnh chính
 
 ```bash
-# Validation
-zoh validate                    # Chạy validation
-zoh validate --verbose          # Chi tiết hơn
-zoh check-consistency           # Kiểm tra nhanh
+# Infrastructure & Initialization
+zoh init --preset <p>      # Khởi tạo từ preset (default, react, dotnet)
+zoh init --mode light      # Chế độ Light (chỉ .agent/ và CONFIG.yaml)
+
+# Validation & Simulation
+zoh validate                # Chạy kiểm tra tính nhất quán
+zoh sim <files>             # Phân tích vùng ảnh hưởng (Simulation)
+zoh check-consistency       # Kiểm tra nhanh các file chính
 
 # State Management
-zoh status                      # Xem trạng thái
-zoh transition <phase>          # Chuyển phase
-zoh transition coding           # Ví dụ: chuyển sang coding
+zoh status                  # Xem trạng thái hiện tại
+zoh transition <phase>      # Chuyển đổi phase
 
 # Task Management
-zoh task list                   # Liệt kê tasks
-zoh task complete <id>          # Đánh dấu hoàn thành
+zoh task list               # Liệt kê danh sách task
+zoh task complete <id>      # Đánh dấu hoàn thành task
 
 # Checkpoint
 zoh checkpoint create           # Tạo checkpoint

@@ -10,7 +10,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
 
-from .config import ConfigLoader
+from zoh.core.config import ConfigLoader
+from zoh.core.token import TokenManager
 
 
 class StateValidator:
@@ -29,6 +30,7 @@ class StateValidator:
         
         self.state_machine = self._load_state_machine()
         self.cli_only = self.config.get('state.transition_cli_only', True)
+        self.token_manager = TokenManager(self.config)
     
     def _load_state_machine(self) -> Dict:
         """Load STATE_MACHINE.yaml"""
@@ -165,6 +167,12 @@ class StateValidator:
                 return passed, "All validators passed" if passed else "Some validators failed"
             except:
                 return False, "Cannot read validation report"
+        
+        elif guard_type == 'token_budget_within_limit':
+            current_phase = self.get_current_phase()
+            is_ok = self.token_manager.is_within_budget(current_phase)
+            remaining = self.token_manager.get_remaining(current_phase)
+            return is_ok, f"Token budget OK: {remaining} remaining" if is_ok else f"Token budget EXCEEDED for {current_phase}"
         
         else:
             return False, f"Unknown guard type: {guard_type}"

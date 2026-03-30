@@ -32,14 +32,24 @@ cd Zero-Omission-Harness
 pip install -e ".[cli]"
 ```
 
-### 2. Initialize (3 minutes)
+### 2. Initialize (1 minute)
 
 ```bash
-# Check system
-zoh check-consistency
+# Initialize from preset (react, dotnet, default)
+zoh init --preset react --mode light
 
 # View current status
 zoh status
+```
+
+### 3. Verification & Simulation
+
+```bash
+# Run consistency check
+zoh validate
+
+# Simulate impact of changes (Impact Analysis)
+zoh sim src/utils.ts
 ```
 
 ### 3. Start Interview (5 minutes)
@@ -85,23 +95,26 @@ pip install -e .
 ### Main Commands
 
 ```bash
-# Validation
-zoh validate                    # Run validation
-zoh validate --verbose          # More details
-zoh check-consistency           # Quick check
+# Infrastructure & Initialization
+zoh init --preset <p>      # Initialize from preset (default, react, dotnet)
+zoh init --mode light      # Light mode (only .agent/ and CONFIG.yaml)
+
+# Validation & Simulation
+zoh validate                # Run consistency validation
+zoh sim <files>             # Run Impact Analysis (Simulation)
+zoh check-consistency       # Quick check
 
 # State Management
-zoh status                      # View status
-zoh transition <phase>          # Switch phase
-zoh transition coding           # Example: switch to coding
+zoh status                  # View status
+zoh transition <phase>      # Switch phase
 
 # Task Management
-zoh task list                   # List tasks
-zoh task complete <id>          # Mark as complete
+zoh task list               # List tasks
+zoh task complete <id>      # Mark as complete
 
 # Checkpoint
-zoh checkpoint create           # Create checkpoint
-zoh checkpoint list             # List checkpoints
+zoh checkpoint create       # Create checkpoint
+zoh checkpoint list         # List checkpoints
 zoh checkpoint rollback --id <id>  # Rollback
 
 # Auto-fix

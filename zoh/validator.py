@@ -9,14 +9,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
-from .core.config import ConfigLoader
-from .validators.base import (
+from zoh.core.config import ConfigLoader
+from zoh.validators.base import (
     Severity, ValidationStatus, ValidationResult, ConsistencyReport
 )
-from .validators.code_contract import CodeContractValidator
-from .validators.map_code import MapCodeValidator
-from .validators.doc_reality import DocRealityValidator
-from .validators.state_transition import StateTransitionValidator
+from zoh.validators.code_contract import CodeContractValidator
+from zoh.validators.map_code import MapCodeValidator
+from zoh.validators.doc_reality import DocRealityValidator
+from zoh.validators.state_transition import StateTransitionValidator
 
 
 class FileHashTracker:

@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.toast
+.cache
+.pytest_cache/
+.coverage
+.mypy_cache/
+.DS_Store
+
+# Build & Metadata
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ZOH Specific
+.sim/
+.token/
+.checkpoints/
+.zoh/
+DEBUG.log
+example/
