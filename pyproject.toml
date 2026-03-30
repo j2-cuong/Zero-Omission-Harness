@@ -29,6 +29,10 @@ dependencies = [
     "pyyaml>=6.0",
     "jsonschema>=4.0.0",
     "pathspec>=0.11.0",
+    "libcst>=1.1.0",
+    "mcp>=1.0.0",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.20.0",
 ]
 
 [project.optional-dependencies]
@@ -40,6 +44,7 @@ cli = [
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0",
     "black>=23.0.0",
     "flake8>=6.0.0",
     "mypy>=1.0.0",
@@ -65,7 +70,7 @@ Repository = "https://github.com/j2-cuong/zero-omission-harness"
 Issues = "https://github.com/j2-cuong/zero-omission-harness/issues"
 
 [tool.setuptools]
-packages = ["zoh", "zoh.core", "zoh.validators"]
+packages = ["zoh", "zoh.core", "zoh.tests", "zoh.validators", "zoh.analyzers", "zoh.commands", "zoh.dashboard"]
 
 [tool.setuptools.package-dir]
 zoh = "zoh"
@@ -95,7 +100,7 @@ warn_unused_configs = true
 disallow_untyped_defs = false
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["zoh/tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]

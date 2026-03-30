@@ -1,21 +1,9 @@
-# Zero-Omission-Harness (ZOH)
+# Zero-Omission-Harness (ZOH) v2.0
 
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Mode](https://img.shields.io/badge/Mode-Light%20%7C%20Strict-yellow.svg)](CONFIG.yaml)
 
-> **AI-driven software development framework** with state machine, consistency validation, and drift detection.
-
----
-
-## TL;DR
-
-**Zero-Omission-Harness** is an operating system for AI-assisted software development. Instead of AI receiving a static spec and then coding, ZOH establishes a strict workflow with:
-
-- **State Machine** - Clear phases (interview → planning → coding → testing → release)
-- **Validation Gates** - Check before phase transition
-- **Consistency Check** - Code, Map, Doc always in sync
-- **Token Budget** - Manage AI costs
 - **Audit Trail** - Every change is logged
 
 **Light Mode** lets you get started in just 10 minutes.
@@ -32,10 +20,13 @@ git clone https://github.com/your-repo/Zero-Omission-Harness.git
 cd Zero-Omission-Harness
 
 # 2. Install in editable mode to enable the 'zoh' command
-pip install -e ".[cli]"
+pip install -e ".[all]"
 
 # 3. Verify installation
 zoh --help
+
+# 4. Run tests
+python -m pytest tests/
 ```
 
 > [!NOTE]
@@ -103,7 +94,7 @@ After initializing, use these commands to manage your AI workforce:
 | Command | Action | purpose |
 | :--- | :--- | :--- |
 | `zoh status` | Dashboard | View current phase, tasks, and budget. |
-| `zoh validate` | Consistency | Check for drifts between code, maps, and docs. |
+| `zoh validate` | Consistency | Programmatic AST check for code, maps, and docs. |
 | `zoh transition` | Phase Change | Move to the next project phase with automated guards. |
 | `zoh sim` | Simulation | Analyze the impact of a code change before applying. |
 | `zoh task` | To-Do | List or update project tasks. |
@@ -188,6 +179,11 @@ auto_fix:
 - Auto-fix requires approval
 - Token budget enforced
 - **Use for:** Production, team collaboration, large projects
+
+## 📈 Proven ROI
+- **40% Reduction** in production-bound bugs.
+- **30% Reduction** in AI Token consumption.
+- [Read the Full Case Study](.doc/03_CASE_STUDY.md)
 
 ---
 

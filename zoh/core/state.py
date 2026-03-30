@@ -12,6 +12,7 @@ from typing import Dict, List, Optional, Any, Tuple
 
 from zoh.core.config import ConfigLoader
 from zoh.core.token import TokenManager
+from zoh.core.state_lock import StateLockManager
 
 
 class StateValidator:
@@ -27,6 +28,9 @@ class StateValidator:
         self.state_file = Path(state_file or self.config.get('state.state_file', '.state/STATE.md'))
         self.state_machine_file = Path(state_machine_file or self.config.get('state.state_machine', '.state/STATE_MACHINE.yaml'))
         self.history_dir = Path(self.config.get('state.history_dir', '.state/history'))
+        
+        self.lock_manager = StateLockManager()
+        self.critical_files = [self.state_file, self.state_machine_file]
         
         self.state_machine = self._load_state_machine()
         self.cli_only = self.config.get('state.transition_cli_only', True)
@@ -57,7 +61,14 @@ class StateValidator:
         }
     
     def _load_current_state(self) -> Dict[str, str]:
-        """Parse STATE.md để lấy current state"""
+        """Parse STATE.md để lấy current state (Verify lock first)"""
+        # Integrity Check
+        try:
+            self.lock_manager.verify_lock(self.critical_files)
+        except Exception as e:
+            # Re-raise for CLI to handle
+            raise e
+
         if not self.state_file.exists():
             return {'phase': 'unknown', 'status': 'unknown', 'version': ''}
         
@@ -273,6 +284,9 @@ class StateValidator:
         success = self._write_new_state(to_phase)
         
         if success:
+            # Update Integrity Lock after successful change
+            self.lock_manager.generate_lock(self.critical_files)
+            
             result['success'] = True
             result['message'] = f"Transitioned from '{current_phase}' to '{to_phase}'"
             self._create_audit_entry('transition_success', {
